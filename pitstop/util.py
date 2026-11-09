@@ -20,6 +20,7 @@ PROGRAMDATA = Path(os.environ.get("ProgramData", r"C:\ProgramData"))
 PF = Path(os.environ.get("ProgramFiles", r"C:\Program Files"))
 PF86 = Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"))
 WINDIR = Path(os.environ.get("WINDIR", r"C:\Windows"))
+SYSDRIVE = os.environ.get("SystemDrive", "C:")   # "C:" (no backslash): where Windows is installed
 
 
 def clean_path(raw: str | None) -> str | None:

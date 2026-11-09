@@ -72,7 +72,7 @@ findings and work through them per the playbook below. Notes the user typed in t
 - `hw name <sensor_id> "<label>"`: name a header ("Top exhaust"). It's Pitstop's own label only.
   In Git Bash, prefix with `MSYS_NO_PATHCONV=1`, because ids start with `/`.
 - Logs (`data\hw.sqlite`; MCP `hw_log`, `hw_report`, `hw_query`):
-  - `hw log start --label "Gaming: WoW"` logs every second (4 h max) and starts the admin reader (UAC).
+  - `hw log start --label "Gaming"` logs every second (4 h max) and starts the admin reader (UAC).
     `hw log mark "loud now"`, `hw log stop`, `hw log list`.
   - `hw log save` (UI: "That was loud") saves the reader's last 5 minutes as a log.
   - `hw report [id]` is the summary to read first: stats, each fan ramp with the temperatures that rose before
@@ -81,10 +81,10 @@ findings and work through them per the playbook below. Notes the user typed in t
   - `hw query "CPU Package" "Fan #2" --session N --from 14:02 --to 14:10` gives a downsampled slice.
     `hw export N file.csv` writes a log to CSV.
 - Fan balancing: explain the noise from a labelled log first. A busy background program is a cleanup job, not a
-  fan job. Only then propose curve changes, as numbers the user types into FanControl or iCUE. Check them
-  against the limits in docs/HARDWARE.md, and compare a new log afterwards.
+  fan job. Only then propose curve changes, as numbers the user types into FanControl or their cooler's
+  software. Check them against the limits in docs/HARDWARE.md, and compare a new log afterwards.
 - Pitstop never sets a fan speed and never talks to a USB cooler. Fan changes are proposals that the user
-  makes in FanControl or iCUE.
+  makes in FanControl or their cooler's software (iCUE, CAM...).
 
 ## Rules
 

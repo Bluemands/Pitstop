@@ -12,7 +12,7 @@ import re
 from collections import defaultdict
 
 from ..store import Finding
-from ..util import age_days, dir_size
+from ..util import SYSDRIVE, age_days, dir_size
 
 # (label, glob, kind, command-or-None, note)
 RULES: list[tuple[str, str, str, str | None, str]] = [
@@ -60,10 +60,10 @@ RULES: list[tuple[str, str, str, str | None, str]] = [
     # --- SDKs / toolchains / runtimes (one finding per version folder)
     ("Android SDK", r"%LOCALAPPDATA%\Android\Sdk", "sdk", None, "Use SDK Manager to remove old platforms/system images."),
     ("Android SDK system images", r"%LOCALAPPDATA%\Android\Sdk\system-images\*\*", "sdk", None, ""),
-    ("Flutter SDK", r"C:\src\flutter", "sdk", None, ""),
+    ("Flutter SDK", rf"{SYSDRIVE}\src\flutter", "sdk", None, ""),
     ("Rust toolchain", r"~\.rustup\toolchains\*", "sdk", "rustup toolchain uninstall <name>", ""),
     ("Python install", r"%LOCALAPPDATA%\Programs\Python\Python*", "sdk", None, "Check nothing (venvs, PATH, py launcher) still uses this version."),
-    ("Python install", r"C:\Python*", "sdk", None, ""),
+    ("Python install", rf"{SYSDRIVE}\Python*", "sdk", None, ""),
     ("pyenv version", r"~\.pyenv\pyenv-win\versions\*", "sdk", "pyenv uninstall <version>", ""),
     ("Conda env", r"~\*conda*\envs\*", "sdk", "conda env remove -n <name>", ""),
     ("nvm Node version", r"%APPDATA%\nvm\v*", "sdk", "nvm uninstall <version>", ""),
@@ -79,8 +79,8 @@ RULES: list[tuple[str, str, str, str | None, str]] = [
     ("NVIDIA Nsight", r"%ProgramFiles%\NVIDIA Corporation\Nsight*", "sdk", None, ""),
     ("Windows SDK", r"%ProgramFiles(x86)%\Windows Kits\10", "sdk", None, ""),
     ("Emscripten SDK", r"~\emsdk", "sdk", None, ""),
-    ("Strawberry Perl", r"C:\Strawberry", "sdk", None, ""),
-    ("MSYS2", r"C:\msys64", "sdk", None, ""),
+    ("Strawberry Perl", rf"{SYSDRIVE}\Strawberry", "sdk", None, ""),
+    ("MSYS2", rf"{SYSDRIVE}\msys64", "sdk", None, ""),
 
     # --- AI / ML model stores
     ("Hugging Face cache", r"~\.cache\huggingface", "models", "huggingface-cli delete-cache", ""),

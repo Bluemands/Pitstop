@@ -39,9 +39,9 @@ class Limits(unittest.TestCase):
 class FanControlConfig(unittest.TestCase):
     CONFIG = {"FanControl": {
         "Controls": [
-            {"Identifier": "/lpc/it8689e/control/1", "Enable": True, "SelectedFanCurve": {"Name": "Case"},
+            {"Identifier": "/lpc/nct6798d/control/1", "Enable": True, "SelectedFanCurve": {"Name": "Case"},
              "MinimumPercent": 0},
-            {"Identifier": "/lpc/it8689e/control/2", "Enable": False},
+            {"Identifier": "/lpc/nct6798d/control/2", "Enable": False},
         ],
         "FanCurves": [
             {"Name": "Case", "SelectedTempSource": {"Identifier": "NVApiWrapper/0-GA102-A/sensor/0"},
@@ -63,7 +63,7 @@ class FanControlConfig(unittest.TestCase):
                 return fancontrol.read()
 
     def test_norm_id_drops_chip_index(self):
-        self.assertEqual(fancontrol.norm_id("/lpc/it8689e/0/control/1"), "/lpc/it8689e/control/1")
+        self.assertEqual(fancontrol.norm_id("/lpc/nct6798d/0/control/1"), "/lpc/nct6798d/control/1")
         self.assertEqual(fancontrol.norm_id("/gpu-nvidia/0/control/1"), "/gpu-nvidia/0/control/1")
 
     def test_curves_and_controls(self):
@@ -73,14 +73,14 @@ class FanControlConfig(unittest.TestCase):
         case = next(c for c in fc["curves"] if c["name"] == "Case")
         self.assertEqual(case["points"], [[30.0, 5.0], [70.0, 40.0], [100.0, 100.0]])
         self.assertEqual(case["source_name"], "GPU temperature")
-        ctl = fc["controls"]["/lpc/it8689e/control/1"]
+        ctl = fc["controls"]["/lpc/nct6798d/control/1"]
         self.assertTrue(ctl["enabled"])
         self.assertEqual(ctl["curve"], "Case")
-        self.assertIsNone(fc["controls"]["/lpc/it8689e/control/2"]["curve"])
+        self.assertIsNone(fc["controls"]["/lpc/nct6798d/control/2"]["curve"])
 
     def test_fan_headers(self):
         fc = self.read()
-        rows = {r["header"]: r for r in info.fan_headers(snapshot(), fc, {"/lpc/it8689e/0/fan/1": "Top exhaust"})}
+        rows = {r["header"]: r for r in info.fan_headers(snapshot(), fc, {"/lpc/nct6798d/0/fan/1": "Top exhaust"})}
         self.assertIn("FanControl", rows["Fan #2"]["controlled_by"])
         self.assertEqual(rows["Fan #2"]["label"], "Top exhaust")
         self.assertEqual(rows["Fan #1"]["controlled_by"], "Nothing connected")
@@ -134,7 +134,7 @@ class Logs(TempDB):
         cols, _ = logdb.columns(snap)
         vals = logdb.unpack(logdb.pack(snap, cols + ["/not/a/sensor"]))
         self.assertEqual(vals[-1], None)
-        self.assertEqual(vals[cols.index("/lpc/it8689e/0/fan/1")], 600.0)
+        self.assertEqual(vals[cols.index("/lpc/nct6798d/0/fan/1")], 600.0)
 
     def test_columns_skip_hidden_and_unreadable(self):
         cols, _ = logdb.columns(snapshot(admin=False))
@@ -177,7 +177,7 @@ class Reports(TempDB):
 
     def test_stats_and_names(self):
         self.fill(self.sid)
-        r = report.report(self.sid, names={"/lpc/it8689e/0/fan/1": "Top exhaust"})
+        r = report.report(self.sid, names={"/lpc/nct6798d/0/fan/1": "Top exhaust"})
         fan = next(f for f in r["fans"] if f["fan"] == "Top exhaust")
         self.assertEqual((fan["rpm"]["min"], fan["rpm"]["max"]), (600.0, 1200.0))
         self.assertEqual(r["session"]["samples"], 120)

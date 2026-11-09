@@ -7,7 +7,7 @@ import os
 import string
 
 from ..store import Finding
-from ..util import HOME, WINDIR, dir_size, file_size
+from ..util import HOME, PF86, SYSDRIVE, WINDIR, dir_size, file_size
 
 # (title, glob, risk, command, suggestion)
 DIRS = [
@@ -15,9 +15,9 @@ DIRS = [
     ("Windows temp folder", r"%WINDIR%\Temp", "low", None, "Needs admin. Disk Cleanup > Temporary files."),
     ("Windows Update download cache", r"%WINDIR%\SoftwareDistribution\Download", "low", "cleanmgr /sageset", "Disk Cleanup > Windows Update Cleanup."),
     ("Delivery Optimization cache", r"%WINDIR%\ServiceProfiles\NetworkService\AppData\Local\Microsoft\Windows\DeliveryOptimization\Cache", "low", "Delete-DeliveryOptimizationCache -Force", ""),
-    ("Previous Windows installation", r"C:\Windows.old", "low", None, "Disk Cleanup > Previous Windows installation(s). Removes ability to roll back."),
-    ("Windows upgrade leftovers", r"C:\$WINDOWS.~BT", "low", None, "Disk Cleanup > Temporary Windows installation files."),
-    ("Windows upgrade leftovers", r"C:\$Windows.~WS", "low", None, ""),
+    ("Previous Windows installation", rf"{SYSDRIVE}\Windows.old", "low", None, "Disk Cleanup > Previous Windows installation(s). Removes ability to roll back."),
+    ("Windows upgrade leftovers", rf"{SYSDRIVE}\$WINDOWS.~BT", "low", None, "Disk Cleanup > Temporary Windows installation files."),
+    ("Windows upgrade leftovers", rf"{SYSDRIVE}\$Windows.~WS", "low", None, ""),
     ("Windows error reports", r"%ProgramData%\Microsoft\Windows\WER", "low", None, "Disk Cleanup > Windows error reports."),
     ("App crash dumps", r"%LOCALAPPDATA%\CrashDumps", "low", None, "Only useful for debugging crashes."),
     ("Kernel minidumps", r"%WINDIR%\Minidump", "low", None, ""),
@@ -25,9 +25,9 @@ DIRS = [
     ("DirectX shader cache", r"%LOCALAPPDATA%\D3DSCache", "low", None, "Rebuilt automatically."),
     ("NVIDIA shader cache", r"%LOCALAPPDATA%\NVIDIA\DXCache", "low", None, "Rebuilt automatically (games may stutter briefly)."),
     ("NVIDIA GL cache", r"%LOCALAPPDATA%\NVIDIA\GLCache", "low", None, ""),
-    ("NVIDIA driver extract leftovers", r"C:\NVIDIA", "low", None, "Unpacked driver installers."),
-    ("AMD driver extract leftovers", r"C:\AMD", "low", None, "Unpacked driver installers."),
-    ("Intel driver extract leftovers", r"C:\Intel", "low", None, ""),
+    ("NVIDIA driver extract leftovers", rf"{SYSDRIVE}\NVIDIA", "low", None, "Unpacked driver installers."),
+    ("AMD driver extract leftovers", rf"{SYSDRIVE}\AMD", "low", None, "Unpacked driver installers."),
+    ("Intel driver extract leftovers", rf"{SYSDRIVE}\Intel", "low", None, ""),
     ("Thumbnail cache", r"%LOCALAPPDATA%\Microsoft\Windows\Explorer", "low", None, "Disk Cleanup > Thumbnails."),
     ("Chrome cache", r"%LOCALAPPDATA%\Google\Chrome\User Data\*\Cache", "low", None, "Browser cache; clear from the browser."),
     ("Chrome code cache", r"%LOCALAPPDATA%\Google\Chrome\User Data\*\Code Cache", "low", None, ""),
@@ -37,7 +37,7 @@ DIRS = [
     ("Firefox cache", r"%LOCALAPPDATA%\Mozilla\Firefox\Profiles\*\cache2", "low", None, ""),
     ("Discord cache", r"%APPDATA%\discord\Cache", "low", None, ""),
     ("Spotify cache", r"%LOCALAPPDATA%\Spotify\Storage", "low", None, "Offline/streaming cache; size can be capped in Spotify settings."),
-    ("Steam shader cache", r"C:\Program Files (x86)\Steam\steamapps\shadercache", "low", None, ""),
+    ("Steam shader cache", str(PF86 / "Steam" / "steamapps" / "shadercache"), "low", None, ""),
 ]
 MIN_BYTES = 50 * 1024 * 1024
 

@@ -907,7 +907,7 @@ function logBar(d) {
       <span class="hint">Click “Mark” whenever the fans annoy you. Then ask Claude to look at log #${d.log.id}.</span></div></section>`;
   }
   return `<section class="panel"><div class="logbar">
-    <input id="logLabel" placeholder="What are you doing? e.g. Gaming: WoW" maxlength="80" aria-label="Log label">
+    <input id="logLabel" placeholder="What are you doing? e.g. Gaming" maxlength="80" aria-label="Log label">
     <button class="btn primary" data-log="start">Start logging</button>
     ${d.via === "monitor" ? `<button class="btn warn" data-log="save" title="Saves the last 5 minutes of readings as a log">That was loud: save the last 5 minutes</button>` : ""}
     <span class="hint">A log records every sensor once a second until you stop it (4 hours at most), with the busiest programs.

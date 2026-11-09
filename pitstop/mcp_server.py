@@ -341,7 +341,7 @@ def hw_info() -> dict:
 
 @mcp.tool()
 def hw_name(sensor_id: str, label: str) -> dict:
-    """Name a sensor or fan header (e.g. '/lpc/it8689e/0/fan/1' -> 'Top exhaust front'); an empty label
+    """Name a sensor or fan header (e.g. '/lpc/nct6798d/0/fan/1' -> 'Top exhaust front'); an empty label
     clears it. Naming a motherboard header names its RPM and control % together. Only changes Pitstop's
     own labels."""
     from .hw import live

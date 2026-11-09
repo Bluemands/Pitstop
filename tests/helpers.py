@@ -7,14 +7,14 @@ def sensor(sid, type_, name, value, hidden=False, **kw):
 
 
 def snapshot(admin=True, cpu_temp=60.0, fan2=600.0, pump=4300.0, gpu_temp=50.0, nvme=40.0):
-    board = {"id": "/lpc/it8689e/0", "type": "SuperIO", "name": "ITE IT8689E", "parent": "/motherboard", "sub": [],
+    board = {"id": "/lpc/nct6798d/0", "type": "SuperIO", "name": "Nuvoton NCT6798D", "parent": "/motherboard", "sub": [],
              "sensors": [
-                 sensor("/lpc/it8689e/0/fan/0", "Fan", "Fan #1", 0.0),
-                 sensor("/lpc/it8689e/0/fan/1", "Fan", "Fan #2", fan2),
-                 sensor("/lpc/it8689e/0/control/1", "Control", "Fan #2", 30.0),
-                 sensor("/lpc/it8689e/0/fan/2", "Fan", "Fan #3", 550.0),
-                 sensor("/lpc/it8689e/0/fan/4", "Fan", "Fan #5", pump),
-                 sensor("/lpc/it8689e/0/temperature/2", "Temperature", "Temperature #3", 50.0),
+                 sensor("/lpc/nct6798d/0/fan/0", "Fan", "Fan #1", 0.0),
+                 sensor("/lpc/nct6798d/0/fan/1", "Fan", "Fan #2", fan2),
+                 sensor("/lpc/nct6798d/0/control/1", "Control", "Fan #2", 30.0),
+                 sensor("/lpc/nct6798d/0/fan/2", "Fan", "Fan #3", 550.0),
+                 sensor("/lpc/nct6798d/0/fan/4", "Fan", "Fan #5", pump),
+                 sensor("/lpc/nct6798d/0/temperature/2", "Temperature", "Temperature #3", 50.0),
              ]}
     return {"ts": 1000.0, "admin": admin, "source": "LibreHardwareMonitor test", "hardware": [
         {"id": "/motherboard", "type": "Motherboard", "name": "Test Board", "parent": None, "sensors": [],

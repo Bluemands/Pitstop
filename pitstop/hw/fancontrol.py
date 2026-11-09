@@ -20,8 +20,8 @@ def install_dir() -> Path | None:
 
 
 def norm_id(identifier: str) -> str:
-    """FanControl drops LHM's chip index: '/lpc/it8689e/control/1' vs LHM 0.9.6's
-    '/lpc/it8689e/0/control/1'. Compare in FanControl's form."""
+    """FanControl drops LHM's chip index: '/lpc/nct6798d/control/1' vs LHM 0.9.6's
+    '/lpc/nct6798d/0/control/1'. Compare in FanControl's form."""
     return re.sub(r"^(/lpc/[^/]+)/\d+/", r"\1/", identifier or "")
 
 
