@@ -12,6 +12,7 @@ Pitstop measures. You and Claude decide. Nothing changes without your OK, and al
 ![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-2f6f62?style=flat-square)
 ![Made for Claude Code](https://img.shields.io/badge/made%20for-Claude%20Code-2f6f62?style=flat-square)
 ![MIT licence](https://img.shields.io/badge/licence-MIT-2f6f62?style=flat-square)
+[![Buy me a coffee](https://img.shields.io/badge/buy%20me%20a-coffee-2f6f62?style=flat-square&logo=kofi&logoColor=white)](https://ko-fi.com/constryx)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/home-dark.png">
@@ -256,6 +257,11 @@ No. Pitstop is Windows only: it reads the registry, Windows Update, winget and W
 .venv\Scripts\python.exe -m unittest discover -s tests -t .
 ```
 </details>
+
+## Support
+
+Pitstop is free and always will be. If it saved you some space or some fan noise, you can
+[buy me a coffee](https://ko-fi.com/constryx) ☕
 
 ## Credits
 
