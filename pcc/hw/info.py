@@ -130,5 +130,5 @@ def report(snap: dict, everything: bool = False, names: dict | None = None, fc: 
            "running_hot": hot}
     if not snap.get("admin"):
         out["note"] = ("Read without admin: CPU temperatures, the motherboard fan chip and RAM temperatures are "
-                       "missing. Start the monitor (`pcc hw monitor --elevate`, or Tune › Sensors) or add --elevate.")
+                       "missing. Start the admin reader (`pcc hw monitor --background`, `hw_now(elevate=True)`, or Tune › Sensors › Read all sensors).")
     return out

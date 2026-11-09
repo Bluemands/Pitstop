@@ -133,6 +133,11 @@ def _ramps(L: _Log, fans: list[str], temps: list[str]) -> list[dict]:
             events.append([r])
     out = []
     for ev in events:
+        biggest: dict = {}                # a fan that ramped twice in one event: keep its bigger rise
+        for r in ev:
+            if r["col"] not in biggest or r["to"] - r["from"] > biggest[r["col"]]["to"] - biggest[r["col"]]["from"]:
+                biggest[r["col"]] = r
+        ev = list(biggest.values())
         k0 = min(r["start_k"] for r in ev)
         k1 = max(r["end_k"] for r in ev)
         kp = max(r["peak_k"] for r in ev)

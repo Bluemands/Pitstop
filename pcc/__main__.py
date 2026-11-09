@@ -212,7 +212,7 @@ def main(argv: list[str] | None = None) -> int:
     s = hws.add_parser("now", help="current readings (full readings need admin: --elevate, or a running monitor)")
     s.add_argument("--all", action="store_true", help="every sensor, not just the key ones")
     s = hws.add_parser("monitor", help="read every second into data/hw-live.json until nobody asks for "
-                                      "readings for a while (run elevated: --elevate)")
+                                      "readings for a while (--background starts it as admin and returns)")
     s.add_argument("--interval", type=float, default=1.0); s.add_argument("--idle-exit", type=float, default=120)
     s.add_argument("--background", action="store_true", help="start it and return straight away")
     s = hws.add_parser("name", help="name a sensor or fan header, e.g. 'Top exhaust' (empty label clears it)")

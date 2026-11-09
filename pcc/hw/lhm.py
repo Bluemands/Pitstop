@@ -106,9 +106,12 @@ def _hardware(h, parent: str | None = None) -> dict:
     for sub in h.SubHardware:
         out["sub"].append(_hardware(sub, out["id"]))
     for s in h.Sensors:
-        name = str(s.Name)
-        out["sensors"].append({"id": str(s.Identifier), "type": str(s.SensorType), "name": name,
-                               "value": _num(s.Value), "min": _num(s.Min), "max": _num(s.Max),
+        name, kind = str(s.Name), str(s.SensorType)
+        lo = _num(s.Min)
+        if kind == "Temperature" and lo == 0:   # drives report 0 before their first real reading
+            lo = None
+        out["sensors"].append({"id": str(s.Identifier), "type": kind, "name": name,
+                               "value": _num(s.Value), "min": lo, "max": _num(s.Max),
                                "hidden": bool(_HIDDEN.search(name))})
     return out
 
