@@ -5,7 +5,9 @@ and the user decide together. See docs/DESIGN.md for the design and safety model
 docs/HARDWARE.md for the Tune section (sensors, logs, fans).
 
 Run everything with the project venv: `.venv\Scripts\python.exe -m pcc <cmd>` (add `--json` for
-machine-readable output). The same capabilities are exposed as the `pc-cleaner` MCP server (`.mcp.json`).
+machine-readable output). The same capabilities are exposed as the `pc-cleaner` MCP server (`.mcp.json`, written
+by `pcc setup`). Tests: `.venv\Scripts\python.exe -m unittest discover -s tests -t .`. This is a public repo:
+anything specific to one PC goes in `CLAUDE.local.md` or `notes\`, both gitignored.
 
 The user browses and marks findings in the local UI: the "PC Cleaner" Desktop/Start menu shortcut
 (`pythonw -m pcc.ui.app`: no console, exits when its window closes; `python -m pcc shortcut` recreates it),
