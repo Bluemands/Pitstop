@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Pitstop">
+  <rect width="128" height="128" rx="28" fill="#2f6f62"/>
+  <!-- gauge -->
+  <path d="M28 82a36 36 0 0 1 72 0" fill="none" stroke="#dcebe7" stroke-width="9" stroke-linecap="round"/>
+  <path d="M28 82a36 36 0 0 1 22-33.2" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round"/>
+  <!-- needle -->
+  <path d="M64 82 L84 56" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="64" cy="82" r="8" fill="#ffffff"/>
+  <!-- ticks -->
+  <g stroke="#dcebe7" stroke-width="4" stroke-linecap="round">
+    <path d="M64 34v6"/><path d="M98 50l-5 4"/><path d="M30 50l5 4"/>
+  </g>
+</svg>
