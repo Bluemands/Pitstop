@@ -24,6 +24,34 @@ def _print(data, as_json: bool) -> None:
               + (f"\n{'':23}{rest}" if rest else ""))
 
 
+def _setup(a) -> dict:
+    """First run on a new PC: everything that depends on where this copy lives."""
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    r: dict = {}
+    mcp = root / ".mcp.json"
+    try:
+        cfg = json.loads(mcp.read_text(encoding="utf-8")) if mcp.exists() else {}
+    except ValueError:
+        cfg = {}
+    cfg.setdefault("mcpServers", {})["pc-cleaner"] = {
+        "command": sys.executable.replace("pythonw.exe", "python.exe"),
+        "args": ["-m", "pcc.mcp_server"], "env": {"PYTHONPATH": str(root)}}
+    mcp.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+    r["mcp"] = f"wrote {mcp} (Claude Code asks to approve the server the first time)"
+    if not a.no_shortcut:
+        from .ui.app import install_shortcuts
+        r["shortcut"] = install_shortcuts()
+    if not a.no_hardware:
+        from .hw import setup
+        try:
+            r["hardware"] = setup.setup()
+        except (setup.SetupError, OSError) as e:
+            r["hardware"] = {"error": str(e)}
+    r["next"] = "Open PC Cleaner from the Start menu, or run `python -m pcc ui`. Then ask Claude for a cleanup session."
+    return r
+
+
 def _hw(a, j: bool) -> None:
     from .hw import fancontrol, info, live
     from .hw.lhm import SensorError
@@ -41,6 +69,13 @@ def _hw(a, j: bool) -> None:
         return
     if a.hw_cmd == "names":
         _print(live.names(), j)
+        return
+    if a.hw_cmd == "setup":
+        from .hw import setup
+        try:
+            _print(setup.discover() if a.discover else setup.setup(a.skip_download), True)
+        except (setup.SetupError, OSError) as e:
+            _print({"error": str(e)}, True)
         return
     if a.hw_cmd in ("log", "report", "query", "export"):
         from .hw import logdb, report
@@ -183,6 +218,9 @@ def main(argv: list[str] | None = None) -> int:
     s = hws.add_parser("name", help="name a sensor or fan header, e.g. 'Top exhaust' (empty label clears it)")
     s.add_argument("sensor_id"); s.add_argument("label")
     hws.add_parser("names", help="list named sensors")
+    s = hws.add_parser("setup", help="fetch LibreHardwareMonitor (pinned, from nuget.org) and check the PawnIO driver")
+    s.add_argument("--skip-download", action="store_true", help="only check what's there")
+    s.add_argument("--discover", action="store_true", help=argparse.SUPPRESS)  # maintainers: re-pin dependencies
     lg = hws.add_parser("log", help="sensor logs you start and stop (the reader runs as admin: one UAC prompt)")
     lgs = lg.add_subparsers(dest="log_cmd", required=True)
     s = lgs.add_parser("start", help="start logging every second until stopped or the time limit")
@@ -201,6 +239,8 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--session", type=int); s.add_argument("--from", dest="start"); s.add_argument("--to", dest="end")
     s.add_argument("--points", type=int, default=120)
     s = hws.add_parser("export", help="write a log to CSV"); s.add_argument("session", type=int); s.add_argument("path")
+    s = sub.add_parser("setup", help="first run: write .mcp.json for Claude Code, add the shortcut, set up sensors")
+    s.add_argument("--no-shortcut", action="store_true"); s.add_argument("--no-hardware", action="store_true")
     s = sub.add_parser("ui", help="open the local web UI")
     s.add_argument("--port", type=int, default=8765); s.add_argument("--no-open", action="store_true")
     sub.add_parser("shortcut", help="add 'PC Cleaner' to the Desktop and Start menu")
@@ -309,6 +349,8 @@ def main(argv: list[str] | None = None) -> int:
             _print(actions.journal(a.limit), True)
         elif a.cmd == "hw":
             _hw(a, j)
+        elif a.cmd == "setup":
+            _print(_setup(a), True)
         elif a.cmd == "ui":
             from .ui.server import serve
             serve(a.port, open_window=not a.no_open)

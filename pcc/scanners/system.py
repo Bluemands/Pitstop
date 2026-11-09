@@ -7,7 +7,7 @@ import os
 import string
 
 from ..store import Finding
-from ..util import HOME, LOCAL, PROGRAMDATA, WINDIR, age_days, dir_size, file_size
+from ..util import HOME, WINDIR, dir_size, file_size
 
 # (title, glob, risk, command, suggestion)
 DIRS = [

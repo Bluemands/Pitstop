@@ -28,10 +28,12 @@ class SensorError(Exception):
 
 
 def find_lhm_dir() -> Path | None:
-    """Where LibreHardwareMonitorLib.dll (and its dependencies) live. $PCC_LHM_DIR wins, then a
-    copy in vendor/lhm, then the copy FanControl ships (the same library it reads sensors with)."""
-    cands = [os.environ.get("PCC_LHM_DIR"), ROOT / "vendor" / "lhm",
-             PF86 / "FanControl", PF / "FanControl", LOCAL / "Programs" / "FanControl"]
+    """Where LibreHardwareMonitorLib.dll (and its dependencies) live. $PCC_LHM_DIR wins, then the copy
+    FanControl ships (the library it reads sensors with: same version, and it finds NVMe drives), then the
+    pinned NuGet copy `hw setup` puts in vendor/lhm. That one reads everything except NVMe drives so far:
+    the NuGet package pulls DiskInfoToolkit 1.1.2, FanControl ships 2.1.0."""
+    cands = [os.environ.get("PCC_LHM_DIR"), PF86 / "FanControl", PF / "FanControl",
+             LOCAL / "Programs" / "FanControl", ROOT / "vendor" / "lhm"]
     for c in cands:
         if c and (Path(c) / DLL).is_file():
             return Path(c)

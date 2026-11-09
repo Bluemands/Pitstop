@@ -21,7 +21,7 @@ _APPROVED = r"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved
 RUN_KEYS = [
     (f"HKEY_CURRENT_USER\\{_RUN}", "Run key (you)", f"HKEY_CURRENT_USER\\{_APPROVED}\\Run"),
     (f"HKEY_LOCAL_MACHINE\\{_RUN}", "Run key (all users)", f"HKEY_LOCAL_MACHINE\\{_APPROVED}\\Run"),
-    (f"HKEY_LOCAL_MACHINE\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run", "Run key (all users, 32-bit)",
+    ("HKEY_LOCAL_MACHINE\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Run", "Run key (all users, 32-bit)",
      f"HKEY_LOCAL_MACHINE\\{_APPROVED}\\Run32"),
 ]
 APPROVAL_KEYS = [f"{h}\\{_APPROVED}\\{leaf}" for h in ("HKEY_CURRENT_USER", "HKEY_LOCAL_MACHINE")
