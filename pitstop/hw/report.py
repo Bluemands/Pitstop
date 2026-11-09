@@ -181,7 +181,7 @@ def _fan_setup(fc_json: str | None) -> list[dict]:
 def report(session: int | None = None, names: dict | None = None) -> dict:
     d = logdb.load(session)
     if d is None:
-        return {"error": "No logs yet. Start one with `pcc hw log start --label \"...\"`."}
+        return {"error": "No logs yet. Start one with `pitstop hw log start --label \"...\"`."}
     s = d["session"]
     head = {"id": s["id"], "label": s["label"], "kind": s["kind"], "started": _when(s["started"]),
             "minutes": round(((s["ended"] or time.time()) - s["started"]) / 60, 1),

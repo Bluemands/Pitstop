@@ -1,4 +1,4 @@
-"""`python -m pcc hw setup`: get what full sensor readings need.
+"""`python -m pitstop hw setup`: get what full sensor readings need.
 
 1. LibreHardwareMonitorLib (MPL-2.0) and its .NET Framework dependencies, from nuget.org into vendor/lhm.
    Every package is pinned by version and SHA-256; anything else is refused. (If FanControl is installed,
@@ -25,7 +25,7 @@ NUGET = "https://www.nuget.org/api/v2/package/{id}/{ver}"
 TOP = ("LibreHardwareMonitorLib", "0.9.6")
 
 # (package, version) -> sha256 of the .nupkg, for LibreHardwareMonitorLib 0.9.6 and everything it needs on
-# .NET Framework 4.7.2. Regenerate with `python -m pcc hw setup --discover` after changing TOP, and review.
+# .NET Framework 4.7.2. Regenerate with `python -m pitstop hw setup --discover` after changing TOP, and review.
 PINNED: dict[tuple[str, str], str] = {
     ("LibreHardwareMonitorLib", "0.9.6"): "60db5e0d9135f4658b385cae139d3b9eaeac0a8e867d322d20b5dbe4c4039197",
     ("DiskInfoToolkit", "1.1.2"): "a997f0b3701e20b2ab9296e07ee4f74f877e75015277fb6bd314ade1e2c4db13",
@@ -55,7 +55,7 @@ class SetupError(Exception):
 
 
 def _fetch(pid: str, ver: str) -> bytes:
-    req = urllib.request.Request(NUGET.format(id=pid, ver=ver), headers={"User-Agent": "pc-cleaner-setup"})
+    req = urllib.request.Request(NUGET.format(id=pid, ver=ver), headers={"User-Agent": "pitstop-setup"})
     with urllib.request.urlopen(req, timeout=60) as r:
         return r.read()
 
@@ -151,7 +151,7 @@ def setup(skip_download: bool = False) -> dict:
     try:
         import subprocess
         import sys
-        test = subprocess.run([sys.executable, "-c", "from pcc.hw.lhm import Reader; r=Reader(); "
+        test = subprocess.run([sys.executable, "-c", "from pitstop.hw.lhm import Reader; r=Reader(); "
                                "print(len(list(r.read()['hardware'])))"], cwd=str(ROOT), capture_output=True,
                               text=True, timeout=90)
         r["test_read"] = (f"ok: {test.stdout.strip()} hardware groups" if test.returncode == 0

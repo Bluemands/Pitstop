@@ -6,8 +6,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from pcc.hw import fancontrol, info, logdb, report
-from pcc.hw.lhm import add_limits, all_sensors
+from pitstop.hw import fancontrol, info, logdb, report
+from pitstop.hw.lhm import add_limits, all_sensors
 from tests.helpers import snapshot
 
 

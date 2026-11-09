@@ -1,6 +1,6 @@
 """Sensor logs: sessions, samples, process snapshots and marks, in data/hw.sqlite.
 
-Kept apart from pcc.sqlite on purpose: the UI reloads itself whenever pcc.sqlite changes, and a log
+Kept apart from pitstop.sqlite on purpose: the UI reloads itself whenever pitstop.sqlite changes, and a log
 writes every second. Each sample is one row holding every sensor's value as packed float32 in the
 session's column order (NaN = no reading), so a 4-hour log at 1 s is under 10 MB.
 """

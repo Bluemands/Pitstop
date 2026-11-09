@@ -3,12 +3,12 @@
 An HWiNFO-style view of what the hardware is doing, plus sensor logs that Claude can read and answer questions
 about. The first job it was built for: **make fans quiet on light work without letting anything run hot.**
 
-The model is the same as the rest of PC Cleaner: the tool measures, Claude and you decide, and nothing changes
+The model is the same as the rest of Pitstop: the tool measures, Claude and you decide, and nothing changes
 without your OK.
 
 ## What it never does
 
-- **It never sets a fan speed.** FanControl, the BIOS or your cooler's own software stay in charge. PC Cleaner
+- **It never sets a fan speed.** FanControl, the BIOS or your cooler's own software stay in charge. Pitstop
   reads their configuration and proposes changes, which you make yourself.
 - **It never talks to USB coolers, fan hubs or power supplies.** Two programs driving the same USB device can
   garble its commands. LibreHardwareMonitor's Controller and PSU groups stay disabled.
@@ -18,8 +18,8 @@ without your OK.
 
 ## Sensors
 
-PC Cleaner reads sensors through [LibreHardwareMonitorLib](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)
-(MPL-2.0), loaded with `pythonnet` on .NET Framework 4.8. `python -m pcc hw setup` fetches it from NuGet into
+Pitstop reads sensors through [LibreHardwareMonitorLib](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)
+(MPL-2.0), loaded with `pythonnet` on .NET Framework 4.8. `python -m pitstop hw setup` fetches it from NuGet into
 `vendor\lhm`, or it uses the copy FanControl ships if FanControl is installed.
 
 | Without admin | With admin (through PawnIO) adds |
@@ -84,7 +84,7 @@ itself):
 
 ## Fan software
 
-PC Cleaner reads FanControl's active configuration (which header follows which curve, and on which sensor)
+Pitstop reads FanControl's active configuration (which header follows which curve, and on which sensor)
 and recognises other fan and RGB software that's running (iCUE, NZXT CAM, Armoury Crate, GIGABYTE Control
 Center, MSI Center, Argus Monitor, SignalRGB, L-Connect, HWiNFO…). Other software is shown, never controlled.
 

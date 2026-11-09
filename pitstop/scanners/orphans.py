@@ -42,7 +42,7 @@ _ROOT_SKIP = {"windows", "program files", "program files (x86)", "programdata", 
               "recovery", "system volume information", "$recycle.bin", "$winreagent", "config.msi",
               "documents and settings", "onedrivetemp", "$sysreset", "$getcurrent", "msocache",
               "inetpub", "windows.old", "$windows.~bt", "$windows.~ws", "boot", "efi", "$av_asw",
-              "pcc-quarantine", "drivers", "xboxgames", "$extend"}
+              "pitstop-quarantine", "drivers", "xboxgames", "$extend"}
 _HOME_SKIP = {".cache", ".config", ".local", ".ssh", ".gitconfig", ".vscode", ".claude", ".android",
               ".nuget", ".gradle", ".m2", ".cargo", ".rustup", ".dotnet", ".ollama", ".lmstudio",
               ".jdks", ".bun"}  # containers of things other scanners size individually

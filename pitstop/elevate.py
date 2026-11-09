@@ -81,13 +81,13 @@ def run_elevated(exe: str, params: str = "", cwd: str | None = None,
         _kernel32.CloseHandle(sei.hProcess)
 
 
-def pcc_elevated(args: list[str], timeout_s: float = 3600) -> str:
-    """Run `python -m pcc <args> --json` elevated (hidden window) and return what it printed."""
+def pitstop_elevated(args: list[str], timeout_s: float = 3600) -> str:
+    """Run `python -m pitstop <args> --json` elevated (hidden window) and return what it printed."""
     root = Path(__file__).resolve().parent.parent
-    fd, out = tempfile.mkstemp(prefix="pcc-elevated-", suffix=".txt")
+    fd, out = tempfile.mkstemp(prefix="pitstop-elevated-", suffix=".txt")
     os.close(fd)
     try:
-        params = subprocess.list2cmdline(["-m", "pcc", *args, "--json", "--out", out])
+        params = subprocess.list2cmdline(["-m", "pitstop", *args, "--json", "--out", out])
         exe = sys.executable.replace("pythonw.exe", "python.exe")
         if run_elevated(exe, params, cwd=str(root), timeout_s=timeout_s, show=0) is None:
             raise ElevationError(f"Elevated run did not finish within {timeout_s:.0f} s")

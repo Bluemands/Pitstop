@@ -104,7 +104,7 @@ def _notes(name: str, publisher: str | None) -> tuple[list[str], bool, str | Non
         notes.append("Peripheral, fan or GPU software: turning it off can stop RGB lighting, fan curves or "
                      "device settings from applying.")
     if _UPDATER.search(name) and not hardware:
-        notes.append("An updater: without it the app updates when you open it, or from PC Cleaner's Updates page.")
+        notes.append("An updater: without it the app updates when you open it, or from Pitstop's Updates page.")
     return notes, hardware, protected
 
 

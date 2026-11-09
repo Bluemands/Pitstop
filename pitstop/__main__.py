@@ -1,4 +1,4 @@
-"""Command line: `python -m pcc <command>`. Add --json for machine-readable output, and
+"""Command line: `python -m pitstop <command>`. Add --json for machine-readable output, and
 --elevate to run the command as admin (one UAC prompt) from an unelevated terminal."""
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import sys
 import time
 
 from . import actions, diskindex, queries, scanners
-from .elevate import ElevationError, is_admin, pcc_elevated
+from .elevate import ElevationError, is_admin, pitstop_elevated
 from .util import human
 
 
@@ -34,9 +34,9 @@ def _setup(a) -> dict:
         cfg = json.loads(mcp.read_text(encoding="utf-8")) if mcp.exists() else {}
     except ValueError:
         cfg = {}
-    cfg.setdefault("mcpServers", {})["pc-cleaner"] = {
+    cfg.setdefault("mcpServers", {})["pitstop"] = {
         "command": sys.executable.replace("pythonw.exe", "python.exe"),
-        "args": ["-m", "pcc.mcp_server"], "env": {"PYTHONPATH": str(root)}}
+        "args": ["-m", "pitstop.mcp_server"], "env": {"PYTHONPATH": str(root)}}
     mcp.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
     r["mcp"] = f"wrote {mcp} (Claude Code asks to approve the server the first time)"
     if not a.no_shortcut:
@@ -48,7 +48,7 @@ def _setup(a) -> dict:
             r["hardware"] = setup.setup()
         except (setup.SetupError, OSError) as e:
             r["hardware"] = {"error": str(e)}
-    r["next"] = "Open PC Cleaner from the Start menu, or run `python -m pcc ui`. Then ask Claude for a cleanup session."
+    r["next"] = "Open Pitstop from the Start menu, or run `python -m pitstop ui`. Then ask Claude for a cleanup session."
     return r
 
 
@@ -142,7 +142,7 @@ def _hw(a, j: bool) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     sys.stdout.reconfigure(encoding="utf-8")
-    ap = argparse.ArgumentParser(prog="pcc", description="PC Cleaner: find forgotten space, decide with Claude.")
+    ap = argparse.ArgumentParser(prog="pitstop", description="Pitstop: clean, check and tune a Windows PC, deciding with Claude.")
     ap.add_argument("--json", action="store_true", help="JSON output")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
@@ -202,7 +202,7 @@ def main(argv: list[str] | None = None) -> int:
                                              "(needs --elevate; dry run unless --yes)")
     s.add_argument("ids", nargs="+"); s.add_argument("--yes", action="store_true")
     s = sub.add_parser("restore-point", help="create a System Restore point (needs --elevate; dry run unless --yes)")
-    s.add_argument("--description", default="PC Cleaner: before driver changes"); s.add_argument("--yes", action="store_true")
+    s.add_argument("--description", default="Pitstop: before driver changes"); s.add_argument("--yes", action="store_true")
     s = sub.add_parser("open", help="open a Windows page for the user: optional-updates, windows-update, device-manager")
     s.add_argument("what", choices=list(actions.SETTINGS_PAGES))
     s = sub.add_parser("journal"); s.add_argument("--limit", type=int, default=30)
@@ -243,7 +243,7 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--no-shortcut", action="store_true"); s.add_argument("--no-hardware", action="store_true")
     s = sub.add_parser("ui", help="open the local web UI")
     s.add_argument("--port", type=int, default=8765); s.add_argument("--no-open", action="store_true")
-    sub.add_parser("shortcut", help="add 'PC Cleaner' to the Desktop and Start menu")
+    sub.add_parser("shortcut", help="add 'Pitstop' to the Desktop and Start menu")
 
     argv = list(sys.argv[1:] if argv is None else argv)
     if "--out" in argv:  # used by --elevate: the elevated copy writes its output here
@@ -254,7 +254,7 @@ def main(argv: list[str] | None = None) -> int:
         argv.remove("--elevate")
         if not is_admin():
             try:
-                print(pcc_elevated([x for x in argv if x != "--json"]), end="")
+                print(pitstop_elevated([x for x in argv if x != "--json"]), end="")
             except ElevationError as e:
                 _print({"error": str(e)}, True)
                 return 1

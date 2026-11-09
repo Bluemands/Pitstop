@@ -1,6 +1,6 @@
 """Hardware monitoring (the Tune section): sensors, fan headers, inventory.
 
-Read-only. PC Cleaner never sets a fan speed or talks to a USB cooler: fan control stays with
+Read-only. Pitstop never sets a fan speed or talks to a USB cooler: fan control stays with
 FanControl / the BIOS / the cooler's own software. See docs/HARDWARE.md.
 
   lhm        reads sensors through LibreHardwareMonitorLib (pythonnet), plus safe limits per sensor

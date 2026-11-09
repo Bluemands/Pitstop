@@ -1,6 +1,6 @@
-# PC Cleaner
+# Pitstop
 
-A Windows maintenance tool built to be used **with Claude**. PC Cleaner does the inventory and measuring; you
+A Windows maintenance tool built to be used **with Claude**. Pitstop does the inventory and measuring; you
 and Claude decide what to do about it, one confirmed batch at a time. Nothing is removed or changed without
 your explicit OK, and almost everything can be undone.
 
@@ -37,21 +37,21 @@ More in [docs/DESIGN.md](docs/DESIGN.md) and [docs/HARDWARE.md](docs/HARDWARE.md
   - .NET Framework 4.8. It's already part of Windows 10 1903+ and Windows 11.
   - The [PawnIO](https://pawnio.eu) driver, for CPU temperatures and motherboard fans (`winget install namazso.PawnIO`).
     Without it you still get GPU, drive and CPU-load readings.
-  - [FanControl](https://getfancontrol.com), if you want PC Cleaner to read your fan curves.
+  - [FanControl](https://getfancontrol.com), if you want Pitstop to read your fan curves.
 
 ## Install
 
 ```powershell
-git clone https://github.com/<you>/PC-Cleaner.git
-cd PC-Cleaner
+git clone https://github.com/Bluemands/Pitstop.git
+cd Pitstop
 py -3.13 -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
-.venv\Scripts\python.exe -m pcc setup
+.venv\Scripts\python.exe -m pitstop setup
 ```
 
 `setup` does three things:
-- writes `.mcp.json`, so Claude Code can use PC Cleaner's tools
-- adds a **PC Cleaner** shortcut to the Desktop and Start menu
+- writes `.mcp.json`, so Claude Code can use Pitstop's tools
+- adds a **Pitstop** shortcut to the Desktop and Start menu
 - sets up sensors: it uses FanControl's copy of LibreHardwareMonitor if FanControl is installed, otherwise it
   downloads a pinned, hash-checked copy from nuget.org.
 
@@ -64,7 +64,7 @@ py -3.13 -m venv .venv
 - "My fans are loud when they shouldn't be." Claude reads your sensors and fan setup, asks you to log a session,
   and explains each fan ramp.
 
-**The UI:** open PC Cleaner from the Start menu. Browse findings, mark them (remove / keep / review later),
+**The UI:** open Pitstop from the Start menu. Browse findings, mark them (remove / keep / review later),
 watch live sensors, and start or mark sensor logs. The UI only records decisions; Claude acts on them, and the
 window updates live as it does.
 
@@ -72,13 +72,13 @@ window updates live as it does.
 `--elevate` to run one command as admin.
 
 ```powershell
-.venv\Scripts\python.exe -m pcc summary
-.venv\Scripts\python.exe -m pcc scan
-.venv\Scripts\python.exe -m pcc list --category cache
-.venv\Scripts\python.exe -m pcc quarantine <id>            # dry run; add --yes to do it
-.venv\Scripts\python.exe -m pcc hw now
-.venv\Scripts\python.exe -m pcc hw log start --label "Gaming"
-.venv\Scripts\python.exe -m pcc hw report
+.venv\Scripts\python.exe -m pitstop summary
+.venv\Scripts\python.exe -m pitstop scan
+.venv\Scripts\python.exe -m pitstop list --category cache
+.venv\Scripts\python.exe -m pitstop quarantine <id>            # dry run; add --yes to do it
+.venv\Scripts\python.exe -m pitstop hw now
+.venv\Scripts\python.exe -m pitstop hw log start --label "Gaming"
+.venv\Scripts\python.exe -m pitstop hw report
 ```
 
 ## Tests
@@ -89,7 +89,7 @@ window updates live as it does.
 
 ## Disclaimer
 
-PC Cleaner is provided as is, without warranty (see [LICENSE](LICENSE)). It's careful by design: dry runs,
+Pitstop is provided as is, without warranty (see [LICENSE](LICENSE)). It's careful by design: dry runs,
 quarantine, a journal and a deny-list. But it changes real systems when you tell it to, and the decisions are
 yours. Keep backups of anything you care about. The hardware features only read sensors. Advice about fan
 curves is advice: you own your hardware and the changes you make to it.

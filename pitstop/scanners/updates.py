@@ -178,7 +178,7 @@ def _eol_findings() -> list[Finding]:
             ended = end_d <= today
             when = f"stopped getting security fixes on {end}" if ended else f"stops getting security fixes on {end}"
             home = p["install_dir"] or (_python_home(ver) if family == "Python" else None)
-            uses_pcc = bool(home) and own_python.startswith(norm_key(home))
+            uses_pitstop = bool(home) and own_python.startswith(norm_key(home))
             text = (f"{family} {ver} {when}. Anything built on it keeps working, it just won't get fixes. "
                     f"Don't uninstall it while things still use it: ")
             text += {"Python": "virtual environments (.venv) made from it break if it's removed. Move projects to "
@@ -186,13 +186,13 @@ def _eol_findings() -> list[Finding]:
                      ".NET": "apps built for it need it to start. Developers move apps to newer .NET over time; "
                              "remove it only if nothing asks for it.",
                      "Node.js": f"switch projects to Node {current} LTS."}[family]
-            if uses_pcc:
-                text += " PC Cleaner's own .venv runs on this Python."
+            if uses_pitstop:
+                text += " Pitstop's own .venv runs on this Python."
             out.append(Finding(
                 scanner="updates", category="eol-runtime", title=name, path=home, size=0,
                 risk="high", suggestion=text, command=None,
                 evidence={"version": p["version"], "end_of_support": end, "ended": ended,
-                          "supported_version": f"{family} {current}", "used_by_pc_cleaner": uses_pcc or None},
+                          "supported_version": f"{family} {current}", "used_by_pitstop": uses_pitstop or None},
                 key=f"{family}:{name}",
             ))
             break

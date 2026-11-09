@@ -1,4 +1,4 @@
-"""Local web UI: `python -m pcc ui`.
+"""Local web UI: `python -m pitstop ui`.
 
 Binds to 127.0.0.1 only. Every API call needs the per-launch token (sent as a
 header by the page), and the Host header must be local, so other websites open
@@ -39,9 +39,9 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def _code_stamp() -> float:
-    """Newest change to PC Cleaner's Python code. The page is read from disk on every load but the
+    """Newest change to Pitstop's Python code. The page is read from disk on every load but the
     server's code isn't, so a long-running server can be older than the page it serves."""
-    return max((p.stat().st_mtime for p in (ROOT / "pcc").rglob("*.py")), default=0.0)
+    return max((p.stat().st_mtime for p in (ROOT / "pitstop").rglob("*.py")), default=0.0)
 
 
 BUILD = _code_stamp()
@@ -67,7 +67,7 @@ def _data_version() -> int:
 
 # Fixed prompts only: the page picks a task, it never sends text for Claude to run.
 # CLAUDE.md's playbook defines what "clean up what I marked" means, one confirmed batch at a time.
-CLAUDE_TASKS = {"marked": ("PC Cleaner: marked items", "clean up what I marked")}
+CLAUDE_TASKS = {"marked": ("Pitstop: marked items", "clean up what I marked")}
 _last_claude = {"ts": 0.0}
 
 
@@ -82,9 +82,9 @@ def open_claude(task: str) -> dict:
     claude = ["claude", "--name", name, prompt]
     wt = shutil.which("wt")
     if wt:
-        cmd = [wt, "-w", "new", "new-tab", "-d", str(ROOT), "--title", "PC Cleaner - Claude", "cmd", "/k", *claude]
+        cmd = [wt, "-w", "new", "new-tab", "-d", str(ROOT), "--title", "Pitstop - Claude", "cmd", "/k", *claude]
     else:  # no Windows Terminal: a plain console window
-        cmd = ["cmd", "/c", "start", "PC Cleaner - Claude", "/D", str(ROOT), "cmd", "/k", *claude]
+        cmd = ["cmd", "/c", "start", "Pitstop - Claude", "/D", str(ROOT), "cmd", "/k", *claude]
     subprocess.Popen(cmd, cwd=str(ROOT), creationflags=0 if wt else getattr(subprocess, "CREATE_NO_WINDOW", 0))
     _last_claude["ts"] = time.time()
     return {"opened": True, "where": "Windows Terminal" if wt else "a console window"}
@@ -132,7 +132,7 @@ def _hw_now() -> dict:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "pcc-ui"
+    server_version = "pitstop-ui"
 
     def log_message(self, *a):  # keep the terminal quiet
         pass
@@ -156,7 +156,7 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"error": "bad host"}, 403)
             return False
         if self.path.startswith("/api/") and not secrets.compare_digest(
-                self.headers.get("X-PCC-Token", ""), TOKEN):
+                self.headers.get("X-Pitstop-Token", ""), TOKEN):
             self._json({"error": "bad token"}, 403)
             return False
         return True
@@ -250,7 +250,7 @@ class Handler(BaseHTTPRequestHandler):
             elif u.path == "/api/hw/name":
                 from ..hw import live
                 self._json(live.set_name(str(b["id"]), str(b.get("label", ""))[:60]))
-            elif u.path == "/api/quit":  # a newer PC Cleaner is taking over
+            elif u.path == "/api/quit":  # a newer Pitstop is taking over
                 self._json({"quitting": True})
                 if _server["httpd"]:
                     threading.Thread(target=_server["httpd"].shutdown, daemon=True).start()
@@ -319,7 +319,7 @@ def _running_instance() -> str | None:
     """URL of an app-mode UI that is already serving, if any."""
     try:
         info = json.loads(INSTANCE.read_text())
-        base, hdr = f"http://127.0.0.1:{info['port']}", {"X-PCC-Token": info["token"]}
+        base, hdr = f"http://127.0.0.1:{info['port']}", {"X-Pitstop-Token": info["token"]}
         urllib.request.urlopen(urllib.request.Request(f"{base}/api/index", headers=hdr), timeout=2).close()
     except (OSError, ValueError, KeyError):
         return None
@@ -341,14 +341,14 @@ def _ps_pids(script: str) -> list[int]:
 
 
 def _other_servers() -> list[int]:
-    """Other PC Cleaner app-mode servers (the shortcut's `pythonw -m pcc.ui.app`), not this one."""
+    """Other Pitstop app-mode servers (the shortcut's `pythonw -m pitstop.ui.app`), not this one."""
     pids = _ps_pids("Get-CimInstance Win32_Process -Filter \"Name like 'python%'\" | "
-                    "Where-Object { $_.CommandLine -match 'pcc\\.ui\\.app' } | Select-Object ProcessId")
+                    "Where-Object { $_.CommandLine -match 'pitstop\\.ui\\.app' } | Select-Object ProcessId")
     return [p for p in pids if p not in (os.getpid(), os.getppid())]
 
 
 def _profile_browsers() -> list[int]:
-    """Browser processes using PC Cleaner's own window profile. Nothing else uses it."""
+    """Browser processes using Pitstop's own window profile. Nothing else uses it."""
     prof = str(PROFILE).replace("'", "''")
     return _ps_pids("Get-CimInstance Win32_Process -Filter \"Name='msedge.exe' or Name='chrome.exe'\" | "
                     f"Where-Object {{ $_.CommandLine -like '*--user-data-dir={prof}*' -and "
@@ -364,7 +364,7 @@ def _kill(pids: list[int]) -> None:
 def _prepare_profile() -> None:
     """Edge's default is to keep running after its last window closes ("continue running background
     apps"). That holds the profile lock, so the server never notices the window closed and lives on
-    with old code. Turn it off for PC Cleaner's own profile (it's read when the browser starts)."""
+    with old code. Turn it off for Pitstop's own profile (it's read when the browser starts)."""
     if _profile_in_use():
         return
     f = PROFILE / "Local State"
@@ -393,7 +393,7 @@ def serve(port: int = 8765, open_window: bool = True, app: bool = False) -> None
             raise
         httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)  # port taken by something else
     url = f"http://127.0.0.1:{httpd.server_port}/#t={TOKEN}"
-    print(f"PC Cleaner UI: {url}\n(Ctrl+C to stop)", flush=True)
+    print(f"Pitstop UI: {url}\n(Ctrl+C to stop)", flush=True)
     _server["httpd"] = httpd
     _health_scan_if_stale()
     if app:

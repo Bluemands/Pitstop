@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PC Cleaner</title>
+<title>Pitstop</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1' y='3' width='14' height='10' rx='2' fill='%232f6f62'/%3E%3Crect x='3' y='6' width='7' height='4' rx='1' fill='white'/%3E%3C/svg%3E">
 <style>
 :root {
@@ -243,10 +243,10 @@ dl.ev dd { margin: 0; word-break: break-word; white-space: pre-wrap; }
 </head>
 <body>
 <header>
-  <div class="brand">PC Cleaner</div>
+  <div class="brand">Pitstop</div>
   <div class="drives" id="drives"></div>
   <div class="spacer"></div>
-  <div class="scan"><span class="stale-note" id="stale" hidden title="PC Cleaner's code changed since this window opened">Updated: close and reopen PC Cleaner</span>
+  <div class="scan"><span class="stale-note" id="stale" hidden title="Pitstop's code changed since this window opened">Updated: close and reopen Pitstop</span>
     <span id="scanInfo"></span><button class="btn" id="rescan">Rescan all</button>
     <button class="btn primary" id="doMarked" hidden title="Open Claude Code to work through what you marked">Action marked</button></div>
 </header>
@@ -299,9 +299,9 @@ const verbFor = cat => VERB[cat] || {remove: "Mark remove", keep: "Keep", st: "r
 const TAG_LABEL = {"security": "security", "major": "major version", "self-updating": "updates itself",
                    "use-own-installer": "use its own updater"};
 const BLURB = {
-  "app-update": "Apps with a newer version, from winget. Mark the ones to update and tell Claude; it updates them one batch at a time. Mark one Don't update and Claude can pin it so it stops being offered. Checked whenever PC Cleaner opens (at most hourly).",
+  "app-update": "Apps with a newer version, from winget. Mark the ones to update and tell Claude; it updates them one batch at a time. Mark one Don't update and Claude can pin it so it stops being offered. Checked whenever Pitstop opens (at most hourly).",
   "startup": "Everything that starts with Windows: apps, sign-in tasks and background services, with how much memory each is using now. Disabling only stops the automatic start: apps use Task Manager's own switch, tasks are disabled, and services are set to Manual so they still start when needed. Everything can be turned back on. Security software is listed but left alone.",
-  "driver-update": "Driver updates Windows Update offers for your devices: Microsoft's own channel, not a third-party database. PC Cleaner never installs drivers. Mark the ones you want and Claude makes a restore point first; then you tick them yourself in Settings › Windows Update › Optional updates.",
+  "driver-update": "Driver updates Windows Update offers for your devices: Microsoft's own channel, not a third-party database. Pitstop never installs drivers. Mark the ones you want and Claude makes a restore point first; then you tick them yourself in Settings › Windows Update › Optional updates.",
   "device-problem": "Devices Windows says aren't working: no driver, or a driver that failed. Devices you've disabled yourself aren't listed. Mark one and Claude helps you find the right driver.",
   "driver-superseded": "Older copies of third-party driver packages in the Windows driver store. A newer copy has replaced each one and no device uses it. Removing one exports it to quarantine first, so it can be restored until you purge, and Windows refuses if anything still needs it.",
   "startup-broken": "Startup entries whose program is gone, and Task Manager on/off switches left behind by uninstalled apps. They do nothing (dead services just fail at every boot). Cleaning them up keeps a backup of each.",
@@ -320,7 +320,7 @@ const BLURB = {
   "recycle-bin": "Deleted files still taking up space.",
   "uninstall-leftover": "What a program's own uninstaller left behind, found by comparing a snapshot taken before it ran. Folders and shortcuts are quarantined; startup, task and right-click entries are removed with a backup.",
   "orphan-folder": "Folders in AppData, ProgramData and Program Files that match nothing installed — usually left behind by an uninstall.",
-  "unrecognised-root-folder": "Folders at a drive root the cleaner doesn't recognise. Often your own data — decide carefully.",
+  "unrecognised-root-folder": "Folders at a drive root Pitstop doesn't recognise. Often your own data — decide carefully.",
   "installer": "Setup files in Downloads/Desktop.", "archive": "Archives in Downloads/Desktop.", "disk-image": "ISO/VHD images in Downloads/Desktop.",
   "dead-path-entry": "PATH entries pointing at folders that no longer exist.",
   "duplicate-path-entries": "PATH entries that appear more than once.",
@@ -335,18 +335,18 @@ const state = {
   search: "", sort: {key: "size", dir: -1},
   rows: [], selected: new Set(), summary: null, open: null, explorePath: null,
 };
-function localGet(k) { try { return localStorage.getItem("pcc." + k); } catch { return null; } }
-function localSet(k, v) { try { localStorage.setItem("pcc." + k, v); } catch {} }
+function localGet(k) { try { return localStorage.getItem("pitstop." + k); } catch { return null; } }
+function localSet(k, v) { try { localStorage.setItem("pitstop." + k, v); } catch {} }
 
 async function api(path, body) {
   const r = await fetch(path, {
     method: body ? "POST" : "GET",
-    headers: {"X-PCC-Token": TOKEN, ...(body ? {"Content-Type": "application/json"} : {})},
+    headers: {"X-Pitstop-Token": TOKEN, ...(body ? {"Content-Type": "application/json"} : {})},
     body: body ? JSON.stringify(body) : undefined,
   });
   const j = await r.json();
   if (r.status === 403 && j.error === "bad token") {
-    toast("The PC Cleaner server was restarted — use the new link it printed, or rerun python -m pcc ui");
+    toast("The Pitstop server was restarted — use the new link it printed, or rerun python -m pitstop ui");
     throw new Error("server restarted");
   }
   if (!r.ok) throw new Error(j.error || r.statusText);
@@ -386,7 +386,7 @@ async function loadSummary() {
   b.hidden = !n; b.textContent = `Action marked (${n})`;
   $("#stale").hidden = !state.summary.stale;
 }
-const REOPEN = "PC Cleaner was updated since this window opened. Close it and open PC Cleaner again.";
+const REOPEN = "Pitstop was updated since this window opened. Close it and open Pitstop again.";
 // Opens Claude Code in a new window with "clean up what I marked"; that session shows each batch and asks first.
 async function actionMarked() {
   try {
@@ -436,7 +436,7 @@ function renderScan() {
   $("#scanInfo").textContent = oldest == null ? "Never scanned" :
     oldest < 1 ? "Scanned within the hour" : oldest < 48 ? `Scanned ${Math.round(oldest)} h ago` : `Scanned ${Math.round(oldest / 24)} days ago`;
 }
-// A scan is either one you started (Rescan) or the update check the server runs when PC Cleaner opens.
+// A scan is either one you started (Rescan) or the update check the server runs when Pitstop opens.
 function pollScan(manual = false) {
   const b = $("#rescan"); b.disabled = true; b.textContent = "Scanning…";
   clearInterval(pollScan.h);
@@ -514,7 +514,7 @@ async function loadFindings() {
 }
 const isUpdates = () => state.view === "cat:app-update" || state.view === "cat:driver-update";
 const isProblems = () => state.view === "cat:device-problem";
-// A Windows page this view's work happens in (PC Cleaner itself never installs drivers).
+// A Windows page this view's work happens in (Pitstop itself never installs drivers).
 const OPEN_PAGE = {"cat:driver-update": ["optional-updates", "Open Optional updates"],
                    "cat:device-problem": ["device-manager", "Open Device Manager"]};
 const isStartup = () => state.view === "cat:startup" || state.view === "cat:startup-broken";
@@ -563,7 +563,7 @@ function renderFindings(meta) {
       <tbody>${rows.map(r => isUpdates() ? updateRowHtml(r) : isStartup() ? startupRowHtml(r) :
                          isProblems() ? problemRowHtml(r) : rowHtml(r, max)).join("")}</tbody>
     </table>` : `<div class="empty-state">${state.rows.length ? "Everything here is filtered out." : isUpdates() ? "Everything is up to date." :
-      isMarked ? "Nothing marked. Mark items anywhere in PC Cleaner and they'll collect here." :
+      isMarked ? "Nothing marked. Mark items anywhere in Pitstop and they'll collect here." :
       isStartup() ? "Nothing here." : "Nothing found here on this drive."}</div>`}`;
 
   const go = $('[data-act="claude"]');
@@ -764,7 +764,7 @@ async function renderQuarantine() {
 
 // ---------------------------------------------------------------- tune: sensors
 // Live readings, polled every second while this page is showing. Read-only: naming a sensor only changes
-// PC Cleaner's own label. Full readings need admin, which comes from a background reader started with one
+// Pitstop's own label. Full readings need admin, which comes from a background reader started with one
 // Windows prompt; it stops itself two minutes after this page stops asking.
 const UNIT = {Temperature: "°C", Fan: " RPM", Control: "%", Load: "%", Power: " W", Clock: " MHz", Voltage: " V",
               Current: " A", Data: " GB", SmallData: " MB", Level: "%", Flow: " L/h", Frequency: " Hz"};
@@ -997,7 +997,7 @@ async function refreshView() {
 async function refresh() {
   try { await loadSummary(); await refreshView(); }
   catch (e) {
-    $("#main").innerHTML = `<div class="empty-state">This window lost its connection to PC Cleaner (${esc(e.message)}).<br>Close it and open PC Cleaner again.</div>`;
+    $("#main").innerHTML = `<div class="empty-state">This window lost its connection to Pitstop (${esc(e.message)}).<br>Close it and open Pitstop again.</div>`;
   }
 }
 refresh().then(async () => {

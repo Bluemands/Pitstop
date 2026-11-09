@@ -298,7 +298,7 @@ def _folders(p: dict, names: dict, others: list[dict]) -> list[dict]:
     return list(found.values())
 
 
-_DRIVE_ROOT_SKIP = {"windows", "program files", "program files (x86)", "programdata", "users", "pcc-quarantine",
+_DRIVE_ROOT_SKIP = {"windows", "program files", "program files (x86)", "programdata", "users", "pitstop-quarantine",
                     "$recycle.bin", "system volume information", "recovery", "perflogs"}
 
 
@@ -664,7 +664,7 @@ _SUGGEST = {
                         "`leftover-remove` tidies it.",
     "shell-ext": "Right-click menu handler left behind by {prog}. `leftover-remove` deletes it (.reg backup kept).",
     "shell-verb": "Right-click menu command left behind by {prog}. `leftover-remove` deletes it (.reg backup kept).",
-    "registry": "{prog}'s settings key (a few KB). Left alone: PC Cleaner doesn't do registry cleaning.",
+    "registry": "{prog}'s settings key (a few KB). Left alone: Pitstop doesn't do registry cleaning.",
 }
 
 
@@ -679,7 +679,7 @@ def to_finding(item: dict, prog: str, journal_id: int) -> Finding:
                           "remove it from an elevated terminal.")
             command = f"sc.exe delete \"{item['name']}\""
     elif item.get("at_root"):
-        suggestion = (f"Folder at a drive root matching {prog}. PC Cleaner never moves drive-root folders, and it "
+        suggestion = (f"Folder at a drive root matching {prog}. Pitstop never moves drive-root folders, and it "
                       f"could be your own data: check it, then delete it yourself if it's really {prog}'s.")
     elif kind == "folder" and _under(item.get("path"), [norm_key(TEMP)]):
         suggestion = f"Temporary files left by {prog}. Quarantine it."

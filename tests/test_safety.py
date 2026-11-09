@@ -2,7 +2,7 @@
 import os
 import unittest
 
-from pcc.util import HOME, PF, PF86, PROGRAMDATA, WINDIR, protection_reason
+from pitstop.util import HOME, PF, PF86, PROGRAMDATA, WINDIR, protection_reason
 
 
 class DenyList(unittest.TestCase):

@@ -5,7 +5,7 @@ from ..util import powershell_json
 from . import fancontrol
 from .lhm import all_hardware
 
-# Processes of software that controls fans or reads the same sensors. PC Cleaner reads alongside them
+# Processes of software that controls fans or reads the same sensors. Pitstop reads alongside them
 # and never competes: FanControl's curves are read from its config, everything else is just named.
 FAN_SOFTWARE = {
     "FanControl": "FanControl", "iCUE": "Corsair iCUE", "NZXT CAM": "NZXT CAM", "ArmouryCrate": "ASUS Armoury Crate",
@@ -130,5 +130,5 @@ def report(snap: dict, everything: bool = False, names: dict | None = None, fc: 
            "running_hot": hot}
     if not snap.get("admin"):
         out["note"] = ("Read without admin: CPU temperatures, the motherboard fan chip and RAM temperatures are "
-                       "missing. Start the admin reader (`pcc hw monitor --background`, `hw_now(elevate=True)`, or Tune › Sensors › Read all sensors).")
+                       "missing. Start the admin reader (`pitstop hw monitor --background`, `hw_now(elevate=True)`, or Tune › Sensors › Read all sensors).")
     return out

@@ -1,4 +1,4 @@
-"""MCP server exposing PC Cleaner to Claude.
+"""MCP server exposing Pitstop to Claude.
 
 Read tools are free to call. Tools that change the machine default to a dry
 run and need confirm=True, and Claude must have the user's explicit OK for
@@ -9,18 +9,19 @@ from __future__ import annotations
 from mcp.server.mcpserver import MCPServer
 
 from . import actions, diskindex, queries, scanners
-from .elevate import ElevationError, parse_json_stream, pcc_elevated
+from .elevate import ElevationError, parse_json_stream, pitstop_elevated
 from .util import human
 
-mcp = MCPServer("pc-cleaner", instructions=(
-    "PC Cleaner inventories a Windows PC for forgotten space: leftover folders from uninstalled programs, "
+mcp = MCPServer("pitstop", instructions=(
+    "Pitstop is a Windows maintenance tool with three sections: Clean, Health (updates, startup, drivers) and Tune (sensors, fan logs; the hw_* tools). Clean inventories forgotten space: leftover folders from uninstalled programs, "
     "old SDKs/toolchains, caches, model stores, WSL/Docker disks, stale games, dead PATH entries. "
     "Workflow: summary -> run_scan if stale -> list_findings per category -> discuss with the user -> "
     "decide() to record keep/remove -> act. Never quarantine, purge or edit PATH without the user's explicit "
     "OK for those specific items. Prefer the finding's own 'command' (the owning tool's uninstall/clean "
     "command) over quarantining files a program still manages. Quarantine frees no space until purge. "
     "Programs: use uninstall() (snapshot -> own uninstaller -> leftovers), then quarantine leftover folders "
-    "(elevate=True for Program Files/ProgramData) and remove_leftover() for tasks/startup/right-click entries."
+    "(elevate=True for Program Files/ProgramData) and remove_leftover() for tasks/startup/right-click entries. "
+    "Tune is read-only: Pitstop never sets a fan speed; fan changes are proposals the user makes in FanControl or their cooler's software."
 ))
 
 
@@ -105,12 +106,12 @@ def largest_files(root: str | None = None, top: int = 40) -> list[dict]:
 
 @mcp.tool()
 def quarantine(targets: list[str], reason: str = "", confirm: bool = False, elevate: bool = False) -> list[dict]:
-    """Move folders/files (paths or finding ids) into <drive>:\\PCC-Quarantine. Reversible via restore.
+    """Move folders/files (paths or finding ids) into <drive>:\\Pitstop-Quarantine. Reversible via restore.
     Without confirm=True this is a dry run. Only confirm after the user approved these exact items.
     elevate=True (with confirm) runs it as admin behind one UAC prompt: needed for Program Files / ProgramData."""
     if confirm and elevate:
         try:
-            return parse_json_stream(pcc_elevated(["quarantine", *targets, "--reason", reason, "--yes"]))
+            return parse_json_stream(pitstop_elevated(["quarantine", *targets, "--reason", reason, "--yes"]))
         except (ElevationError, ValueError) as e:
             return [_err(e)]
     out = []
@@ -210,7 +211,7 @@ def remove_leftover(ids: list[str], confirm: bool = False, elevate: bool = False
     shortcuts use quarantine. Dry run unless confirm=True; elevate=True for HKLM/system items."""
     if confirm and elevate:
         try:
-            return parse_json_stream(pcc_elevated(["leftover-remove", *ids, "--yes"]))
+            return parse_json_stream(pitstop_elevated(["leftover-remove", *ids, "--yes"]))
         except (ElevationError, ValueError) as e:
             return [_err(e)]
     out = []
@@ -252,7 +253,7 @@ def pin_updates(ids: list[str], confirm: bool = False) -> list[dict]:
 def _batch(fn, cli: str, ids: list[str], confirm: bool, elevate: bool) -> list[dict]:
     if confirm and elevate:
         try:
-            return parse_json_stream(pcc_elevated([cli, *ids, "--yes"]))
+            return parse_json_stream(pitstop_elevated([cli, *ids, "--yes"]))
         except (ElevationError, ValueError) as e:
             return [_err(e)]
     out = []
@@ -282,7 +283,7 @@ def startup_fix(ids: list[str], confirm: bool = False, elevate: bool = False) ->
 @mcp.tool()
 def open_settings(what: str) -> dict:
     """Open a Windows page for the user: 'optional-updates' (where they tick driver updates themselves),
-    'windows-update' or 'device-manager'. PC Cleaner never installs drivers."""
+    'windows-update' or 'device-manager'. Pitstop never installs drivers."""
     try:
         return actions.open_settings(what)
     except actions.ActionError as e:
@@ -296,7 +297,7 @@ def restore_point(confirm: bool = False) -> dict:
     if not confirm:
         return actions.restore_point(dry_run=True)
     try:
-        return (parse_json_stream(pcc_elevated(["restore-point", "--yes"])) or [{}])[0]
+        return (parse_json_stream(pitstop_elevated(["restore-point", "--yes"])) or [{}])[0]
     except (ElevationError, ValueError) as e:
         return _err(e)
 
@@ -341,7 +342,7 @@ def hw_info() -> dict:
 @mcp.tool()
 def hw_name(sensor_id: str, label: str) -> dict:
     """Name a sensor or fan header (e.g. '/lpc/it8689e/0/fan/1' -> 'Top exhaust front'); an empty label
-    clears it. Naming a motherboard header names its RPM and control % together. Only changes PC Cleaner's
+    clears it. Naming a motherboard header names its RPM and control % together. Only changes Pitstop's
     own labels."""
     from .hw import live
     return live.set_name(sensor_id, label)

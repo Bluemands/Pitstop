@@ -1,7 +1,7 @@
 """Driver health: updates Windows Update offers, devices without a working driver, and old copies
 of driver packages left in the DriverStore.
 
-Read-only. PC Cleaner never installs drivers: the user ticks driver updates in Settings >
+Read-only. Pitstop never installs drivers: the user ticks driver updates in Settings >
 Windows Update > Advanced options > Optional updates (actions.open_settings), ideally after
 actions.restore_point. Nothing here comes from third-party "driver updater" databases, and
 drivers aren't flagged as "old" by date: vendors often never change the date on current drivers.
@@ -74,7 +74,7 @@ def _driver_updates(devices: list[dict]) -> list[Finding]:
         cls = _CLASS_LABEL.get(raw_cls, raw_cls)
         text = (f"Windows Update offers {offered or 'a newer driver'} ({u.get('date')})"
                 f"{f'; you have {cur} ({cur_date})' if cur else ''}. Install it yourself from Settings > Windows "
-                "Update > Advanced options > Optional updates (PC Cleaner never installs drivers). If it causes "
+                "Update > Advanced options > Optional updates (Pitstop never installs drivers). If it causes "
                 "trouble, Device Manager > the device > Driver > Roll Back Driver undoes it.")
         if risky:
             text += " Display and network drivers are the ones most worth a restore point first."

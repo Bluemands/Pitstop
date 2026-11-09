@@ -29,8 +29,8 @@ SCANNERS: dict[str, tuple[Callable[[], list[Finding]], str]] = {
 
 
 def _recheck_uninstalls() -> dict:
-    """Not a scanner: leftovers come from `pcc uninstall`'s before/after snapshot, so "rescanning" them
-    means re-checking each uninstall that still has open leftovers (same as `pcc leftovers <id>`)."""
+    """Not a scanner: leftovers come from `pitstop uninstall`'s before/after snapshot, so "rescanning" them
+    means re-checking each uninstall that still has open leftovers (same as `pitstop leftovers <id>`)."""
     from .. import actions  # late: actions imports from this package
     con = connect()
     jids = {json.loads(r["evidence"] or "{}").get("journal_id") for r in con.execute(

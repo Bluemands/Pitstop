@@ -10,7 +10,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-DB_PATH = Path(os.environ.get("PCC_DB", Path(__file__).resolve().parent.parent / "data" / "pcc.sqlite"))
+DB_PATH = Path(os.environ.get("PITSTOP_DB", Path(__file__).resolve().parent.parent / "data" / "pitstop.sqlite"))
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS findings (

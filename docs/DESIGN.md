@@ -1,4 +1,4 @@
-# PC Cleaner: design
+# Pitstop: design
 
 A Windows maintenance tool designed to be driven *with* Claude. The tool does the fast, mechanical work:
 inventory, sizing, cross-referencing and measuring. Claude does the judgement ("is this folder from something
@@ -29,23 +29,23 @@ piles up is:
 ## Architecture
 
 ```
-pcc/
+pitstop/
   scanners/      read-only; each returns findings (path, size, evidence, risk, suggestion, command)
   diskindex      one walk of a drive -> per-folder sizes in SQLite, then instant drill-down
   footprint      read-only snapshot of everything a program owns, and the post-uninstall comparison
   actions        the only module that changes the machine; every change goes through the journal
-  elevate        UAC: runs an uninstaller or a pcc command as admin and waits for it
+  elevate        UAC: runs an uninstaller or a pitstop command as admin and waits for it
   hw/            Tune: sensors, fan headers, logs (read-only)
   store          SQLite: findings, decisions, disk index, journal
   ui/            local web UI (127.0.0.1 only, per-launch token); reads and records decisions
-  __main__       CLI: `python -m pcc ...` (--json for machine-readable output)
+  __main__       CLI: `python -m pitstop ...` (--json for machine-readable output)
   mcp_server     the same capabilities as MCP tools, so Claude can call them directly
 ```
 
 ## Safety model
 
 1. **Read-only by default.** Scans never modify anything, and every action is a dry run unless confirmed.
-2. **Quarantine, not delete.** Removing a folder moves it into `<drive>:\PCC-Quarantine\` on the same volume, so
+2. **Quarantine, not delete.** Removing a folder moves it into `<drive>:\Pitstop-Quarantine\` on the same volume, so
    it's instant and restorable. Space is freed only on `purge`.
 3. **Journal everything.** Every action records the previous state, and `restore` reverses it.
 4. **A hard deny-list.** Windows, System32, drive roots, profile roots, Program Files roots and similar are

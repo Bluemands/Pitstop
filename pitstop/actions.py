@@ -1,7 +1,7 @@
 """Everything that changes the machine. Every action is journalled and reversible
 until purged.
 
-Quarantine = rename into <drive>:\\PCC-Quarantine on the same volume. That is
+Quarantine = rename into <drive>:\\Pitstop-Quarantine on the same volume. That is
 instant and fully restorable, but frees nothing until `purge`.
 """
 from __future__ import annotations
@@ -25,7 +25,7 @@ from .scanners.envvars import SCOPES, _canon, read_env
 from .store import DB_PATH, _lock, add_findings, connect
 from .util import dir_size, human, norm_key, protection_reason, run
 
-QUARANTINE_DIR = "PCC-Quarantine"
+QUARANTINE_DIR = "Pitstop-Quarantine"
 BACKUP_DIR = DB_PATH.parent / "backups"
 
 
@@ -91,7 +91,7 @@ def plan_quarantine(target: str, reserved: set[str] | None = None) -> dict:
     if why := protection_reason(p):
         raise ActionError(f"Refusing {path}: {why}")
     if norm_key(p).startswith(norm_key(Path(__file__).resolve().parent.parent)):
-        raise ActionError("Refusing to quarantine the cleaner itself")
+        raise ActionError("Refusing to quarantine Pitstop itself")
     size = dir_size(p, budget_s=30)[0] if p.is_dir() else p.stat().st_size
     drive = p.anchor
     stamp = time.strftime("%Y%m%d-%H%M%S")
@@ -113,8 +113,8 @@ def quarantine(target: str, reason: str = "") -> dict:
     dest.parent.mkdir(exist_ok=True)
     readme = dest.parent / "README.txt"
     if not readme.exists():
-        readme.write_text("Folders moved here by PC Cleaner. Restore with `python -m pcc restore <id>`; "
-                          "free the space with `python -m pcc purge`.\n")
+        readme.write_text("Folders moved here by Pitstop. Restore with `python -m pitstop restore <id>`; "
+                          "free the space with `python -m pitstop purge`.\n")
     try:
         os.rename(plan["path"], dest)
     except PermissionError as e:
@@ -123,7 +123,7 @@ def quarantine(target: str, reason: str = "") -> dict:
     except OSError as e:
         raise ActionError(f"Could not move {plan['path']}: {e}") from e
     # Sidecar so the quarantine is self-describing even without the database.
-    Path(str(dest) + ".pcc.json").write_text(json.dumps({"original": plan["path"], "reason": reason,
+    Path(str(dest) + ".pitstop.json").write_text(json.dumps({"original": plan["path"], "reason": reason,
                                                          "ts": time.time(), "size": plan["size"]}))
     jid = _journal("quarantine", plan["path"], plan["size"],
                    {"dest": str(dest), "finding_id": plan["finding_id"], "reason": reason})
@@ -159,7 +159,7 @@ def restore(journal_id: int) -> dict:
         os.makedirs(os.path.dirname(r["target"]), exist_ok=True)
         os.rename(d["dest"], r["target"])
         try:
-            os.remove(d["dest"] + ".pcc.json")
+            os.remove(d["dest"] + ".pitstop.json")
         except OSError:
             pass
         _mark_finding(d.get("finding_id"), "new")
@@ -278,7 +278,7 @@ def purge(journal_ids: list[int] | None = None, older_than_days: float | None = 
                            "error": err or "some files could not be deleted (in use, or needs an elevated terminal)"})
             continue
         try:
-            os.remove(q["dest"] + ".pcc.json")
+            os.remove(q["dest"] + ".pitstop.json")
         except OSError:
             pass
         r = con.execute("SELECT detail FROM journal WHERE id=?", (q["journal_id"],)).fetchone()
@@ -764,7 +764,7 @@ def app_pin(finding_id: str, dry_run: bool = True) -> dict:
 
 
 # ---- drivers ------------------------------------------------------------------------
-# PC Cleaner never installs drivers. It opens the right Windows page, makes a restore point
+# Pitstop never installs drivers. It opens the right Windows page, makes a restore point
 # first, and clears out old copies of driver packages that a newer copy has replaced.
 
 SETTINGS_PAGES = {"optional-updates": "ms-settings:windowsupdate-optionalupdates",
@@ -779,7 +779,7 @@ def open_settings(what: str) -> dict:
     return {"opened": what}
 
 
-def restore_point(description: str = "PC Cleaner: before driver changes", dry_run: bool = True) -> dict:
+def restore_point(description: str = "Pitstop: before driver changes", dry_run: bool = True) -> dict:
     """System Restore point before driver changes. Needs admin; Windows allows one per 24 hours."""
     if dry_run:
         return {"dry_run": True, "would": f"create a System Restore point '{description}' (needs --elevate)"}

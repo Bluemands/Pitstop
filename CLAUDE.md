@@ -1,17 +1,17 @@
-# PC Cleaner
+# Pitstop
 
-Windows cleanup tool built to be driven with Claude. The tool inventories; Claude
+Windows maintenance tool (Clean, Health, Tune) built to be driven with Claude. The tool inventories; Claude
 and the user decide together. See docs/DESIGN.md for the design and safety model, and
 docs/HARDWARE.md for the Tune section (sensors, logs, fans).
 
-Run everything with the project venv: `.venv\Scripts\python.exe -m pcc <cmd>` (add `--json` for
-machine-readable output). The same capabilities are exposed as the `pc-cleaner` MCP server (`.mcp.json`, written
-by `pcc setup`). Tests: `.venv\Scripts\python.exe -m unittest discover -s tests -t .`. This is a public repo:
+Run everything with the project venv: `.venv\Scripts\python.exe -m pitstop <cmd>` (add `--json` for
+machine-readable output). The same capabilities are exposed as the `pitstop` MCP server (`.mcp.json`, written
+by `pitstop setup`). Tests: `.venv\Scripts\python.exe -m unittest discover -s tests -t .`. This is a public repo:
 anything specific to one PC goes in `CLAUDE.local.md` or `notes\`, both gitignored.
 
-The user browses and marks findings in the local UI: the "PC Cleaner" Desktop/Start menu shortcut
-(`pythonw -m pcc.ui.app`: no console, exits when its window closes; `python -m pcc shortcut` recreates it),
-or `python -m pcc ui` from a terminal (pcc/ui/). The UI only reads and
+The user browses and marks findings in the local UI: the "Pitstop" Desktop/Start menu shortcut
+(`pythonw -m pitstop.ui.app`: no console, exits when its window closes; `python -m pitstop shortcut` recreates it),
+or `python -m pitstop ui` from a terminal (pitstop/ui/). The UI only reads and
 records decisions; it never deletes. When the user says "clean up what I marked", list `status=remove`
 findings and work through them per the playbook below. Notes the user typed in the UI are in each finding's `note`.
 
@@ -43,7 +43,7 @@ findings and work through them per the playbook below. Notes the user typed in t
      - Each change is undone with `restore <journal_id>`.
    - Broken startup entries (`startup-broken`): `startup-fix <ids> --yes`. Everything is backed up first;
      use `--elevate` for HKLM switches and dead services.
-   - Driver updates (`driver-update`): PC Cleaner never installs drivers.
+   - Driver updates (`driver-update`): Pitstop never installs drivers.
      1. `restore-point --yes --elevate` (Windows allows one per 24 h).
      2. `open optional-updates`, and tell the user exactly which boxes to tick (device and version).
      3. After they've installed, `scan drivers`. Installed ones drop off, and the window updates live.
@@ -57,7 +57,7 @@ findings and work through them per the playbook below. Notes the user typed in t
    - WSL / Docker disks: never delete the vhdx directly. Prune inside, then compact; `wsl --unregister`
      only after `wsl --export` if the user might want it back.
    - After running a finding's own `command` yourself (store uninstall, cache clean), record it with
-     `decide done <ids>`. The pcc actions mark their findings done themselves. The UI window refreshes
+     `decide done <ids>`. The pitstop actions mark their findings done themselves. The UI window refreshes
      live from the database, so the user sees each item go as it's done.
 6. Suggest `purge` once the user has used the PC for a while without missing anything.
 
@@ -69,7 +69,7 @@ findings and work through them per the playbook below. Notes the user typed in t
   the UI) starts an elevated reader: one UAC prompt. It writes `data\hw-live.json` every second and stops
   2 minutes after the last request. Without it, only the GPU, drives and CPU load are read.
 - `hw info`: inventory (board/BIOS, CPU, RAM, GPU driver, drive health, fan software running, FanControl config).
-- `hw name <sensor_id> "<label>"`: name a header ("Top exhaust"). It's PC Cleaner's own label only.
+- `hw name <sensor_id> "<label>"`: name a header ("Top exhaust"). It's Pitstop's own label only.
   In Git Bash, prefix with `MSYS_NO_PATHCONV=1`, because ids start with `/`.
 - Logs (`data\hw.sqlite`; MCP `hw_log`, `hw_report`, `hw_query`):
   - `hw log start --label "Gaming: WoW"` logs every second (4 h max) and starts the admin reader (UAC).
@@ -83,7 +83,7 @@ findings and work through them per the playbook below. Notes the user typed in t
 - Fan balancing: explain the noise from a labelled log first. A busy background program is a cleanup job, not a
   fan job. Only then propose curve changes, as numbers the user types into FanControl or iCUE. Check them
   against the limits in docs/HARDWARE.md, and compare a new log afterwards.
-- PC Cleaner never sets a fan speed and never talks to a USB cooler. Fan changes are proposals that the user
+- Pitstop never sets a fan speed and never talks to a USB cooler. Fan changes are proposals that the user
   makes in FanControl or iCUE.
 
 ## Rules
@@ -99,21 +99,21 @@ findings and work through them per the playbook below. Notes the user typed in t
 
 ## Code layout
 
-- `pcc/scanners/*` — read-only, each returns `Finding`s. Add a scanner by registering it in
+- `pitstop/scanners/*` — read-only, each returns `Finding`s. Add a scanner by registering it in
   `scanners/__init__.py`; if it claims folders, expose `covered_paths()` and add it to `orphans.py`.
-- `pcc/actions.py` — the only module that changes the machine; everything goes through `_journal`.
-- `pcc/footprint.py` — read-only snapshot of everything a program owns (folders, shortcuts, services,
+- `pitstop/actions.py` — the only module that changes the machine; everything goes through `_journal`.
+- `pitstop/footprint.py` — read-only snapshot of everything a program owns (folders, shortcuts, services,
   drivers, tasks, startup, right-click handlers, vendor keys), and the post-uninstall comparison.
-- `pcc/elevate.py` — UAC: runs an uninstaller or a `pcc` command as admin and waits for it.
-- `pcc/util.py: protection_reason` — hard deny-list for quarantine.
-- `pcc/hw/*` — Tune, read-only:
-  - `lhm.py`: LibreHardwareMonitorLib via pythonnet (FanControl's copy, `vendor\lhm`, or `$PCC_LHM_DIR`), plus
+- `pitstop/elevate.py` — UAC: runs an uninstaller or a `pitstop` command as admin and waits for it.
+- `pitstop/util.py: protection_reason` — hard deny-list for quarantine.
+- `pitstop/hw/*` — Tune, read-only:
+  - `lhm.py`: LibreHardwareMonitorLib via pythonnet (FanControl's copy, `vendor\lhm`, or `$PITSTOP_LHM_DIR`), plus
     warn/crit limits per sensor. The Controller and PSU groups stay off.
   - `fancontrol.py`: FanControl's active config.
   - `live.py`: the elevated monitor, `hw-live.json`, and sensor names.
   - `info.py`: inventory, fan-header table and the compact report.
-  - `logdb.py`: log sessions in `data\hw.sqlite`, kept apart from pcc.sqlite so the UI doesn't reload every
+  - `logdb.py`: log sessions in `data\hw.sqlite`, kept apart from pitstop.sqlite so the UI doesn't reload every
     second. Each sample is one row of packed float32 values.
   - `procs.py`: top CPU/GPU processes via psutil and PDH, in-process (no PowerShell spawning).
   - `report.py`: ramp detection, report, query and CSV export.
-- `data/pcc.sqlite` — findings, decisions, disk index, journal (gitignored).
+- `data/pitstop.sqlite` — findings, decisions, disk index, journal (gitignored).

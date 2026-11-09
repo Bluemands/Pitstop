@@ -57,7 +57,7 @@ def scan() -> list[Finding]:
                     scanner="envvars", category="dead-path-entry", title=f"Dead PATH entry ({scope}): {entry}",
                     path=f"{scope}:PATH:{entry}", size=0, risk="low",
                     suggestion="Folder no longer exists; usually left by an uninstalled SDK or tool.",
-                    command=f'python -m pcc path-remove --scope {scope} "{entry}"',
+                    command=f'python -m pitstop path-remove --scope {scope} "{entry}"',
                     evidence={"scope": scope, "entry": entry}))
         if dupes:
             out.append(Finding(
@@ -66,7 +66,7 @@ def scan() -> list[Finding]:
                 size=0, risk="low",
                 suggestion="These directories are already earlier in the effective PATH, so these copies do nothing "
                            "except push PATH toward its length limit. Removing keeps the first occurrence.",
-                command=f"python -m pcc path-dedupe --scope {scope}",
+                command=f"python -m pitstop path-dedupe --scope {scope}",
                 evidence={"scope": scope, "duplicates": dupes, "path_length": len(path_val)}))
 
         for name, val in env.items():

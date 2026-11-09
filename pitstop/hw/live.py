@@ -1,7 +1,7 @@
 """Live readings: the elevated background monitor, and how everything else gets the latest snapshot.
 
 The UI and Claude's shell run without admin, which only sees GPUs, drives and CPU load. Full
-readings need admin, so `pcc hw monitor` runs elevated (one UAC prompt), reads every second and
+readings need admin, so `pitstop hw monitor` runs elevated (one UAC prompt), reads every second and
 writes the latest snapshot to data/hw-live.json. It stops by itself once nobody has asked for a
 reading for a while: everything that reads the file touches data/hw-wanted first.
 
@@ -32,7 +32,7 @@ BUFFER_S = 300.0                         # what "save the last 5 minutes" can sa
 PROCS_EVERY_S = 5.0
 # Local\ (this sign-in session) works for elevated and unelevated processes alike; creating a Global\ object
 # needs a privilege unelevated processes don't have.
-MUTEX = "Local\\PCCleaner-hw-monitor"
+MUTEX = "Local\\Pitstop-hw-monitor"
 
 _direct: dict = {"reader": None, "error": None}
 _direct_lock = threading.Lock()
@@ -189,8 +189,8 @@ def start_log(label: str, max_hours: float = 4, admin: bool = True) -> dict:
         time.sleep(0.25)
     return r | {"reader": "already running" if not m.get("started") else "started",
                 "all_sensors": bool(snap and snap.get("admin")),
-                "note": "Logging every second. Stop with `pcc hw log stop`; mark noisy moments with "
-                        "`pcc hw log mark \"...\"`." + ("" if snap and snap.get("admin") else
+                "note": "Logging every second. Stop with `pitstop hw log stop`; mark noisy moments with "
+                        "`pitstop hw log mark \"...\"`." + ("" if snap and snap.get("admin") else
                                                        " Without admin: no CPU temperatures or motherboard fans.")}
 
 
@@ -213,10 +213,10 @@ def start_monitor(admin: bool = True) -> dict:
     exe = sys.executable.replace("pythonw.exe", "python.exe")
     root = str(Path(__file__).resolve().parents[2])
     if is_admin() or not admin:
-        subprocess.Popen([exe, "-m", "pcc", "hw", "monitor"], cwd=root,
+        subprocess.Popen([exe, "-m", "pitstop", "hw", "monitor"], cwd=root,
                          creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     else:
-        run_elevated(exe, "-m pcc hw monitor", cwd=root, timeout_s=0, show=0)  # raises if UAC declined
+        run_elevated(exe, "-m pitstop hw monitor", cwd=root, timeout_s=0, show=0)  # raises if UAC declined
     return {"started": True}
 
 
