@@ -1,0 +1,1008 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PC Cleaner</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1' y='3' width='14' height='10' rx='2' fill='%232f6f62'/%3E%3Crect x='3' y='6' width='7' height='4' rx='1' fill='white'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f6f6f4; --panel: #ffffff; --panel-2: #efefec; --line: #e2e2dd; --text: #1d1d1b;
+  --muted: #6b6b66; --faint: #9a9a94; --accent: #2f6f62; --accent-soft: #dcebe7;
+  --remove: #b4432f; --remove-soft: #f6e1dc; --keep: #3d7a3a; --keep-soft: #e1eedf;
+  --review: #9a6a10; --review-soft: #f4ead2; --bar: #c9d9d4; --bar-strong: #2f6f62;
+  --shadow: 0 8px 30px rgba(0,0,0,.12);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151614; --panel: #1d1e1c; --panel-2: #252623; --line: #30312e; --text: #e8e8e3;
+    --muted: #a3a39c; --faint: #75756f; --accent: #7cc4b2; --accent-soft: #233631;
+    --remove: #ee8a76; --remove-soft: #3a2420; --keep: #92c98d; --keep-soft: #213021;
+    --review: #e2b75c; --review-soft: #352c18; --bar: #2e3b37; --bar-strong: #7cc4b2;
+    --shadow: 0 8px 30px rgba(0,0,0,.5);
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 14px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+}
+button { font: inherit; color: inherit; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---- top bar */
+header {
+  display: flex; align-items: center; gap: 24px; padding: 12px 20px;
+  border-bottom: 1px solid var(--line); background: var(--panel);
+}
+.brand { font-weight: 650; letter-spacing: -.01em; font-size: 15px; white-space: nowrap; }
+.drives { display: flex; gap: 8px; }
+.drive {
+  border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 6px 10px;
+  display: grid; grid-template-columns: auto 120px; gap: 2px 10px; align-items: center; cursor: pointer;
+  text-align: left;
+}
+.drive[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.drive b { font-size: 13px; }
+.drive small { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
+.meter { height: 6px; border-radius: 3px; background: var(--panel-2); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--muted); }
+.meter.crit i { background: var(--remove); }
+.drive.all { grid-template-columns: auto; }
+.spacer { flex: 1; }
+.scan { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; white-space: nowrap; }
+.stale-note { background: var(--review-soft); color: var(--review); padding: 3px 10px; border-radius: 99px; font-weight: 600; }
+.btn {
+  border: 1px solid var(--line); background: var(--panel); border-radius: 7px; padding: 5px 12px;
+  cursor: pointer; white-space: nowrap;
+}
+.btn:hover { background: var(--panel-2); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+.btn:disabled { opacity: .5; cursor: default; }
+
+/* ---- layout */
+.app { display: grid; grid-template-columns: 250px 1fr; min-height: 0; }
+nav { border-right: 1px solid var(--line); overflow-y: auto; padding: 12px 8px 24px; }
+nav h4 { margin: 16px 10px 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: 600; }
+nav button {
+  display: flex; width: 100%; gap: 8px; align-items: baseline; border: 0; background: none;
+  padding: 6px 10px; border-radius: 6px; cursor: pointer; text-align: left;
+}
+nav button:hover { background: var(--panel-2); }
+nav button[aria-current="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+nav button .n { margin-left: auto; color: var(--muted); font-size: 12px; font-weight: 400; }
+nav button.empty { color: var(--faint); }
+nav .marked-count { color: var(--remove); font-weight: 600; }
+nav h3.section { margin: 22px 10px 2px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px;
+                 font-weight: 650; letter-spacing: -.005em; color: var(--text); }
+nav h3.section + button { margin-top: 2px; }
+
+/* ---- tune: sensors */
+.hw-wrap { padding: 0 28px 40px; display: grid; gap: 18px; max-width: 1280px; }
+.hw-status { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 12px; }
+.hw-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--keep); }
+.hw-status .dot.off { background: var(--faint); }
+.hw-alert { padding: 10px 14px; border-radius: 10px; background: var(--remove-soft); color: var(--remove); font-weight: 600; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.panel > h2 { margin: 0; padding: 12px 16px 10px; font-size: 14px; font-weight: 650; display: flex; gap: 10px; align-items: baseline; }
+.panel > h2 small { color: var(--faint); font-weight: 400; font-size: 12px; }
+.panel table td, .panel table th { padding: 6px 12px; }
+.panel table th:first-child, .panel table td:first-child { padding-left: 16px; width: auto; }
+.panel table th:last-child, .panel table td:last-child { padding-right: 16px; }
+.panel tbody tr { cursor: default; }
+.panel tbody tr:last-child { border-bottom: 0; }
+.hw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 18px; align-items: start; }
+td.v { text-align: right; white-space: nowrap; font-weight: 600; width: 1%; }
+td.mm { text-align: right; white-space: nowrap; color: var(--faint); font-size: 12px; width: 1%; }
+td.sname { color: var(--text); }
+td.sname small { color: var(--faint); margin-left: 6px; }
+.tbar { height: 6px; border-radius: 3px; background: var(--panel-2); overflow: hidden; min-width: 60px; }
+.tbar i { display: block; height: 100%; background: var(--bar-strong); opacity: .7; }
+.tbar.warn i { background: var(--review); opacity: 1; } .tbar.crit i { background: var(--remove); opacity: 1; }
+tr.warn td.v { color: var(--review); } tr.crit td.v { color: var(--remove); }
+.fan-name { border: 0; background: none; padding: 0; cursor: pointer; font-weight: 550; text-align: left; }
+.fan-name:hover { color: var(--accent); }
+.fan-name .sub { color: var(--faint); font-weight: 400; font-size: 12px; margin-left: 4px; }
+.fan-name .edit { display: none; margin-left: 8px; color: var(--accent); font-weight: 400; font-size: 12px; }
+.fan-name:hover .edit, .fan-name:focus-visible .edit { display: inline; }
+.fan-input { font: inherit; border: 1px solid var(--accent); border-radius: 6px; padding: 2px 6px; background: var(--bg); color: inherit; width: 180px; }
+td.who { color: var(--muted); font-size: 13px; }
+td.who small { display: block; color: var(--review); font-size: 12px; }
+.panel details summary { cursor: pointer; padding: 8px 16px 10px; color: var(--accent); font-size: 13px; list-style: none; }
+.panel details summary::-webkit-details-marker { display: none; }
+.panel details[open] summary { border-bottom: 1px solid var(--line); }
+.logbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px 16px; }
+.logbar input { border: 1px solid var(--line); background: var(--bg); border-radius: 7px; padding: 6px 10px;
+                width: 300px; font: inherit; color: inherit; }
+.logbar .hint { color: var(--muted); font-size: 12px; flex-basis: 100%; }
+.logbar .rec { width: 10px; height: 10px; border-radius: 50%; background: var(--remove); }
+.btn.warn { border-color: var(--review); color: var(--review); }
+.loglist tbody tr { cursor: pointer; }
+.loglist tbody tr.sel { background: var(--accent-soft); }
+.report { display: grid; gap: 18px; }
+.report .meta { color: var(--muted); font-size: 13px; padding: 0 16px 12px; }
+.report td { font-size: 13px; vertical-align: top; }
+.report td.when { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; width: 1%; }
+.report .procs { color: var(--muted); }
+.report .procs b { color: var(--text); font-weight: 550; }
+.over { color: var(--remove); font-weight: 600; }
+
+main { overflow-y: auto; min-width: 0; }
+.view-head { padding: 20px 28px 12px; }
+.view-head h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; font-weight: 650; }
+.view-head p { margin: 4px 0 0; color: var(--muted); max-width: 80ch; }
+.toolbar { display: flex; gap: 10px; align-items: center; padding: 4px 28px 12px; flex-wrap: wrap; }
+.toolbar input[type=search] {
+  border: 1px solid var(--line); background: var(--panel); border-radius: 7px; padding: 6px 10px;
+  width: 280px; font: inherit; color: inherit;
+}
+.toolbar label { color: var(--muted); font-size: 13px; display: flex; gap: 6px; align-items: center; }
+.toolbar .total { margin-left: auto; color: var(--muted); font-size: 13px; }
+
+/* ---- findings table */
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  position: sticky; top: 0; background: var(--bg); z-index: 1; text-align: left; font-weight: 600;
+  font-size: 12px; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--line);
+  user-select: none; white-space: nowrap;
+}
+thead th.sortable { cursor: pointer; }
+thead th.sortable:hover { color: var(--text); }
+th:first-child, td:first-child { padding-left: 28px; width: 44px; }
+th:last-child, td:last-child { padding-right: 28px; }
+tbody tr { border-bottom: 1px solid var(--line); cursor: pointer; }
+tbody tr:hover { background: var(--panel); }
+tbody tr.sel { background: var(--accent-soft); }
+tbody tr.st-keep td.name { opacity: .55; }
+td { padding: 8px 10px; vertical-align: middle; }
+td.name { max-width: 0; width: 55%; }
+td.name .t { font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+td.name .p { color: var(--faint); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+td.size { width: 190px; }
+.sizecell { display: grid; grid-template-columns: 70px 1fr; gap: 10px; align-items: center; }
+.sizecell span { text-align: right; }
+.sizebar { height: 8px; background: var(--panel-2); border-radius: 4px; overflow: hidden; }
+.sizebar i { display: block; height: 100%; background: var(--bar-strong); opacity: .75; border-radius: 4px; }
+td.used { white-space: nowrap; color: var(--muted); width: 150px; }
+td.used.stale { color: var(--review); }
+td.used small { display: block; font-size: 11px; color: var(--faint); }
+.pill { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; white-space: nowrap; }
+.risk-low { background: var(--keep-soft); color: var(--keep); }
+.risk-medium { background: var(--review-soft); color: var(--review); }
+.risk-high { background: var(--remove-soft); color: var(--remove); }
+.st { font-size: 12px; font-weight: 600; white-space: nowrap; }
+.st.remove { color: var(--remove); } .st.keep { color: var(--keep); } .st.review { color: var(--review); }
+.st.new { color: var(--faint); font-weight: 400; } .st.done { color: var(--accent); }
+td.ver { white-space: nowrap; width: 260px; font-size: 13px; }
+td.ver .from { color: var(--faint); }
+td.pub { color: var(--muted); font-size: 13px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+td.tags { width: 240px; }
+.tag { display: inline-block; padding: 1px 7px; margin: 1px 4px 1px 0; border-radius: 99px; font-size: 11px;
+       background: var(--panel-2); color: var(--muted); white-space: nowrap; }
+.tag.security { background: var(--remove-soft); color: var(--remove); }
+.tag.major { background: var(--review-soft); color: var(--review); }
+input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+.empty-state { padding: 60px 28px; color: var(--muted); text-align: center; }
+
+/* ---- bulk bar */
+.bulk {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120%); opacity: 0;
+  display: flex; gap: 8px; align-items: center; padding: 8px 8px 8px 16px; border-radius: 12px;
+  background: var(--text); color: var(--bg); box-shadow: var(--shadow);
+  transition: transform .2s cubic-bezier(.2,.8,.2,1), opacity .2s;
+}
+.bulk.on { transform: translateX(-50%); opacity: 1; }
+.bulk .btn { background: transparent; color: var(--bg); border-color: color-mix(in srgb, var(--bg) 30%, transparent); }
+.bulk .btn:hover { background: color-mix(in srgb, var(--bg) 15%, transparent); }
+.bulk .info { margin-right: 8px; font-size: 13px; }
+
+/* ---- drawer */
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(520px, 92vw); background: var(--panel);
+  border-left: 1px solid var(--line); box-shadow: var(--shadow); transform: translateX(105%);
+  transition: transform .22s cubic-bezier(.2,.8,.2,1); display: flex; flex-direction: column; z-index: 5;
+}
+.drawer.on { transform: none; }
+.drawer .dh { padding: 20px 22px 12px; border-bottom: 1px solid var(--line); }
+.drawer .dh h2 { margin: 0 32px 4px 0; font-size: 18px; letter-spacing: -.01em; }
+.drawer .dh .p { color: var(--muted); font-size: 12px; word-break: break-all; }
+.drawer .x { position: absolute; top: 14px; right: 14px; border: 0; background: none; font-size: 20px; cursor: pointer; color: var(--muted); }
+.drawer .db { padding: 16px 22px; overflow-y: auto; flex: 1; }
+.drawer .big { font-size: 28px; font-weight: 650; letter-spacing: -.02em; }
+.drawer h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); margin: 20px 0 6px; }
+.drawer p { margin: 0; }
+.cmd { display: flex; gap: 8px; align-items: flex-start; background: var(--panel-2); border-radius: 8px; padding: 10px 12px; }
+.cmd code { flex: 1; font: 12px/1.5 "Cascadia Code", Consolas, monospace; word-break: break-all; }
+dl.ev { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 0; font-size: 13px; }
+dl.ev dt { color: var(--muted); }
+dl.ev dd { margin: 0; word-break: break-word; white-space: pre-wrap; }
+.decide { display: flex; gap: 8px; padding: 14px 22px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.decide .btn[data-s="remove"].on { background: var(--remove); border-color: var(--remove); color: var(--panel); }
+.decide .btn[data-s="keep"].on { background: var(--keep); border-color: var(--keep); color: var(--panel); }
+.decide .btn[data-s="review"].on { background: var(--review); border-color: var(--review); color: var(--panel); }
+.decide input { flex: 1 1 100%; border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; background: var(--bg); color: inherit; font: inherit; }
+.links { display: flex; gap: 14px; margin-top: 10px; }
+.links a { color: var(--accent); cursor: pointer; font-size: 13px; text-decoration: none; }
+.links a:hover { text-decoration: underline; }
+
+/* ---- explore */
+.crumbs { padding: 0 28px 10px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; color: var(--muted); }
+.crumbs a { color: var(--accent); cursor: pointer; }
+.callout { margin: 0 28px 16px; padding: 12px 16px; border-radius: 10px; background: var(--accent-soft); color: var(--text); max-width: 900px; }
+.callout code { font: 12px "Cascadia Code", Consolas, monospace; background: var(--panel); padding: 1px 6px; border-radius: 4px; }
+.callout p { margin: 0 0 10px; }
+.toast {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg);
+  padding: 8px 14px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 10;
+}
+.toast.on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">PC Cleaner</div>
+  <div class="drives" id="drives"></div>
+  <div class="spacer"></div>
+  <div class="scan"><span class="stale-note" id="stale" hidden title="PC Cleaner's code changed since this window opened">Updated: close and reopen PC Cleaner</span>
+    <span id="scanInfo"></span><button class="btn" id="rescan">Rescan all</button>
+    <button class="btn primary" id="doMarked" hidden title="Open Claude Code to work through what you marked">Action marked</button></div>
+</header>
+<div class="app">
+  <nav id="nav"></nav>
+  <main id="main"></main>
+</div>
+<div class="bulk" id="bulk">
+  <span class="info num" id="bulkInfo"></span>
+  <button class="btn" data-bulk="remove">Mark remove</button>
+  <button class="btn" data-bulk="keep">Keep</button>
+  <button class="btn" data-bulk="review">Review later</button>
+  <button class="btn" data-bulk="new">Clear</button>
+</div>
+<aside class="drawer" id="drawer" aria-hidden="true"></aside>
+<div class="toast" id="toast"></div>
+
+<script>
+let TOKEN = new URLSearchParams(location.hash.slice(1)).get("t") || "";
+addEventListener("hashchange", () => { TOKEN = new URLSearchParams(location.hash.slice(1)).get("t") || TOKEN; refresh(); });
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+// The nav has three sections: Clean (space), Health (problems to fix), Tune (measure and adjust).
+const CLEAN_GROUPS = [
+  ["Space", [["game","Games"],["program","Programs"],["models","AI models"],["cache","Caches"],
+             ["sdk","SDKs & toolchains"],["vm","Emulators & VMs"],["docker","Docker"],["wsl","WSL distros"]]],
+  ["Windows", [["system-cache","System caches"],["system-file","System files"],["junk-file","Junk files"],["recycle-bin","Recycle Bin"],
+               ["driver-superseded","Old driver copies"]]],
+  ["Leftovers", [["uninstall-leftover","After uninstalls"],["orphan-folder","Leftover folders"],["unrecognised-root-folder","Unrecognised root folders"]]],
+  ["Downloads", [["installer","Installers"],["archive","Archives"],["disk-image","Disk images"]]],
+  ["Housekeeping", [["dead-path-entry","Dead PATH entries"],["duplicate-path-entries","Duplicate PATH entries"],
+                    ["dead-env-var","Dead env variables"],["broken-uninstall-entry","Broken uninstall entries"]]],
+];
+const HEALTH_ITEMS = [["app-update","Updates"],["startup","Startup"],["startup-broken","Broken startup entries"],
+                      ["driver-update","Driver updates"],["device-problem","Device problems"],["eol-runtime","Out of support"]];
+const TUNE_ITEMS = [["tune:sensors", "Sensors"], ["tune:logs", "Logs"]];
+const GROUPS = [...CLEAN_GROUPS, ["Health", HEALTH_ITEMS]];
+const LABEL = Object.fromEntries(GROUPS.flatMap(g => g[1]));
+// Health findings take no space; they stay out of "Biggest items" and get their own columns and verbs.
+const HEALTH = new Set(["app-update", "eol-runtime", "startup", "startup-broken", "driver-update", "device-problem"]);
+const VERB = {"app-update": {remove: "Mark to update", keep: "Don't update", st: "update", kept: "skip"},
+              "driver-update": {remove: "Mark to install", keep: "Skip", st: "install", kept: "skip"},
+              "device-problem": {remove: "Mark to fix", keep: "Ignore", st: "fix", kept: "ignore"},
+              "startup": {remove: "Disable at startup", keep: "Keep", st: "disable", kept: "keep"},
+              "startup-broken": {remove: "Mark to clean up", keep: "Keep", st: "clean up", kept: "keep"}};
+const KIND = {app: "App", task: "Task", service: "Service", run: "Startup entry", link: "Shortcut",
+              "approval-orphans": "On/off switches"};
+const verbFor = cat => VERB[cat] || {remove: "Mark remove", keep: "Keep", st: "remove", kept: "keep"};
+const TAG_LABEL = {"security": "security", "major": "major version", "self-updating": "updates itself",
+                   "use-own-installer": "use its own updater"};
+const BLURB = {
+  "app-update": "Apps with a newer version, from winget. Mark the ones to update and tell Claude; it updates them one batch at a time. Mark one Don't update and Claude can pin it so it stops being offered. Checked whenever PC Cleaner opens (at most hourly).",
+  "startup": "Everything that starts with Windows: apps, sign-in tasks and background services, with how much memory each is using now. Disabling only stops the automatic start: apps use Task Manager's own switch, tasks are disabled, and services are set to Manual so they still start when needed. Everything can be turned back on. Security software is listed but left alone.",
+  "driver-update": "Driver updates Windows Update offers for your devices: Microsoft's own channel, not a third-party database. PC Cleaner never installs drivers. Mark the ones you want and Claude makes a restore point first; then you tick them yourself in Settings › Windows Update › Optional updates.",
+  "device-problem": "Devices Windows says aren't working: no driver, or a driver that failed. Devices you've disabled yourself aren't listed. Mark one and Claude helps you find the right driver.",
+  "driver-superseded": "Older copies of third-party driver packages in the Windows driver store. A newer copy has replaced each one and no device uses it. Removing one exports it to quarantine first, so it can be restored until you purge, and Windows refuses if anything still needs it.",
+  "startup-broken": "Startup entries whose program is gone, and Task Manager on/off switches left behind by uninstalled apps. They do nothing (dead services just fail at every boot). Cleaning them up keeps a backup of each.",
+  "eol-runtime": "Runtimes that no longer get security fixes, or stop soon. For information: things built on them keep working, and removing one can break apps or projects that need it.",
+  "game": "Installed games with last-played dates. All re-downloadable; saves usually live in the cloud or Documents.",
+  "program": "Everything in Apps & Features, with real on-disk size. Folders that contain other findings (like Steam) include them in their size.",
+  "models": "AI model stores. Re-downloadable, but often the single biggest thing on a disk.",
+  "cache": "Package-manager and tool caches. Regenerated on demand — safe to clear.",
+  "sdk": "SDKs, runtimes and toolchains. Check nothing still needs a version before removing it.",
+  "vm": "Emulator and virtual machine images.",
+  "docker": "Docker Desktop's virtual disk. Prune inside Docker, then compact — never delete the file directly.",
+  "wsl": "WSL Linux distros. Virtual disks only grow; export before unregistering.",
+  "system-cache": "Caches Windows, drivers and browsers keep. Rebuilt automatically.",
+  "system-file": "Hibernation and page files. Managed through Windows settings, not deleted.",
+  "junk-file": "Crash dumps and stray temp files nothing needs.",
+  "recycle-bin": "Deleted files still taking up space.",
+  "uninstall-leftover": "What a program's own uninstaller left behind, found by comparing a snapshot taken before it ran. Folders and shortcuts are quarantined; startup, task and right-click entries are removed with a backup.",
+  "orphan-folder": "Folders in AppData, ProgramData and Program Files that match nothing installed — usually left behind by an uninstall.",
+  "unrecognised-root-folder": "Folders at a drive root the cleaner doesn't recognise. Often your own data — decide carefully.",
+  "installer": "Setup files in Downloads/Desktop.", "archive": "Archives in Downloads/Desktop.", "disk-image": "ISO/VHD images in Downloads/Desktop.",
+  "dead-path-entry": "PATH entries pointing at folders that no longer exist.",
+  "duplicate-path-entries": "PATH entries that appear more than once.",
+  "dead-env-var": "Environment variables pointing at missing paths.",
+  "broken-uninstall-entry": "Apps & Features entries whose program is already gone.",
+};
+
+const state = {
+  drive: localGet("drive") || "C",
+  view: localGet("view") || "overview",
+  hideKept: localGet("hideKept") !== "0",
+  search: "", sort: {key: "size", dir: -1},
+  rows: [], selected: new Set(), summary: null, open: null, explorePath: null,
+};
+function localGet(k) { try { return localStorage.getItem("pcc." + k); } catch { return null; } }
+function localSet(k, v) { try { localStorage.setItem("pcc." + k, v); } catch {} }
+
+async function api(path, body) {
+  const r = await fetch(path, {
+    method: body ? "POST" : "GET",
+    headers: {"X-PCC-Token": TOKEN, ...(body ? {"Content-Type": "application/json"} : {})},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const j = await r.json();
+  if (r.status === 403 && j.error === "bad token") {
+    toast("The PC Cleaner server was restarted — use the new link it printed, or rerun python -m pcc ui");
+    throw new Error("server restarted");
+  }
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+
+function human(n) {
+  if (n == null) return "?";
+  const u = ["B","KB","MB","GB","TB"]; let i = 0;
+  while (Math.abs(n) >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+  return i === 0 ? `${n} B` : `${n.toFixed(n >= 100 ? 0 : 1)} ${u[i]}`;
+}
+function ago(d) {
+  if (d == null) return null;
+  if (d === "never") return "never";
+  if (d < 1) return "today";
+  if (d < 60) return `${d} days ago`;
+  if (d < 730) return `${Math.round(d / 30.4)} months ago`;
+  return `${(d / 365).toFixed(1)} years ago`;
+}
+function usedSignal(f) {
+  if (f.last_played_days_ago != null) return {d: f.last_played_days_ago, how: "last played"};
+  if (f.last_launch_days_ago != null) return {d: f.last_launch_days_ago, how: "last launched"};
+  if (f.last_modified_days_ago != null) return {d: f.last_modified_days_ago, how: "last modified"};
+  return null;
+}
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2200);
+}
+
+// ---------------------------------------------------------------- header + nav
+async function loadSummary() {
+  state.summary = await api(`/api/summary?drive=${state.drive === "ALL" ? "" : state.drive}`);
+  renderDrives(); renderNav(); renderScan();
+  const n = state.summary.marked_for_removal.count, b = $("#doMarked");
+  b.hidden = !n; b.textContent = `Action marked (${n})`;
+  $("#stale").hidden = !state.summary.stale;
+}
+const REOPEN = "PC Cleaner was updated since this window opened. Close it and open PC Cleaner again.";
+// Opens Claude Code in a new window with "clean up what I marked"; that session shows each batch and asks first.
+async function actionMarked() {
+  try {
+    const r = await api("/api/claude", {task: "marked"});
+    toast(r.error || r.note || `Opening Claude Code in ${r.where}…`);
+  } catch (e) { toast(e.message === "not found" ? REOPEN : e.message); }
+}
+$("#doMarked").onclick = actionMarked;
+function renderDrives() {
+  const el = $("#drives");
+  el.innerHTML = state.summary.drives.map(d => {
+    const letter = d.drive[0], usedPct = 100 - d.free_pct;
+    return `<button class="drive" data-drive="${letter}" aria-pressed="${state.drive === letter}">
+      <b>${letter}:</b><div class="meter ${d.free_pct < 5 ? "crit" : ""}"><i style="width:${usedPct}%"></i></div>
+      <small class="num">${esc(d.free)} free of ${esc(d.total)}</small></button>`;
+  }).join("") + `<button class="drive all" data-drive="ALL" aria-pressed="${state.drive === "ALL"}"><b>All</b><small>drives</small></button>`;
+  el.querySelectorAll(".drive").forEach(b => b.onclick = () => {
+    state.drive = b.dataset.drive; localSet("drive", state.drive);
+    if (state.view === "explore") state.explorePath = null;
+    refresh();
+  });
+}
+function renderNav() {
+  const cats = Object.fromEntries(state.summary.categories.map(c => [c.category, c]));
+  const m = state.summary.marked_for_removal;
+  const item = (id, label, extra = "", cls = "") =>
+    `<button data-view="${id}" class="${cls}" aria-current="${state.view === id}"><span>${label}</span><span class="n num">${extra}</span></button>`;
+  const cat = (id, label) => {
+    const c = cats[id];
+    return item("cat:" + id, label, !c ? "" : (c.bytes ? esc(c.size) : c.count), c ? "" : "empty");
+  };
+  let h = item("marked", "Marked", m.count ? `<span class="marked-count">${m.count}${m.bytes ? " · " + esc(m.size) : ""}</span>` : "");
+  h += `<h3 class="section">Clean</h3>` + item("overview", "Biggest items") + item("explore", "Explore disk") + item("quarantine", "Quarantine");
+  for (const [g, list] of CLEAN_GROUPS) h += `<h4>${g}</h4>` + list.map(([id, label]) => cat(id, label)).join("");
+  h += `<h3 class="section">Health</h3>` + HEALTH_ITEMS.map(([id, label]) => cat(id, label)).join("");
+  h += `<h3 class="section">Tune</h3>` + TUNE_ITEMS.map(([id, label]) => item(id, label)).join("");
+  $("#nav").innerHTML = h;
+  $("#nav").querySelectorAll("button").forEach(b => b.onclick = () => {
+    state.view = b.dataset.view; localSet("view", state.view); state.selected.clear(); refreshView();
+    renderNav();
+  });
+}
+function renderScan() {
+  const scope = scanScope().names;  // the age of what the Rescan button would refresh
+  const ages = Object.entries(state.summary.scans).filter(([n]) => !scope || scope.includes(n)).map(([, s]) => s.age_hours);
+  const oldest = ages.length ? Math.max(...ages) : null;
+  $("#scanInfo").textContent = oldest == null ? "Never scanned" :
+    oldest < 1 ? "Scanned within the hour" : oldest < 48 ? `Scanned ${Math.round(oldest)} h ago` : `Scanned ${Math.round(oldest / 24)} days ago`;
+}
+// A scan is either one you started (Rescan) or the update check the server runs when PC Cleaner opens.
+function pollScan(manual = false) {
+  const b = $("#rescan"); b.disabled = true; b.textContent = "Scanning…";
+  clearInterval(pollScan.h);
+  pollScan.h = setInterval(async () => {
+    const s = await api("/api/scan");
+    if (s.state === "running") {
+      $("#scanInfo").textContent = {updates: "Checking for updates…", startup: "Checking startup items…",
+                                    drivers: "Checking drivers…", uninstall: "Re-checking uninstall leftovers…"}[s.current]
+        || `Scanning ${s.current || ""}…`;
+      return;
+    }
+    clearInterval(pollScan.h); b.disabled = false; renderRescan();
+    if (s.state === "error") toast("Scan failed: " + s.result);
+    else if (manual) toast("Scan complete");
+    refresh();
+  }, 1000);
+}
+// Rescan just what you're looking at: one quick scanner for a category, the marked items' scanners in
+// Marked, everything only from Biggest items (the full drive scan is the slow one).
+function scanScope() {
+  const scannerOf = Object.fromEntries((state.summary?.categories || []).map(c => [c.category, c.scanner]));
+  if (state.view.startsWith("cat:") && scannerOf[state.view.slice(4)])
+    return {names: [scannerOf[state.view.slice(4)]], label: `Rescan ${LABEL[state.view.slice(4)] || "this"}`};
+  if (state.view === "marked") {
+    const names = [...new Set((state.rows || []).map(r => scannerOf[r.category]).filter(Boolean))];
+    if (names.length) return {names, label: "Rescan marked"};
+  }
+  return {names: null, label: "Rescan all"};
+}
+function renderRescan() {
+  const b = $("#rescan");
+  const tune = state.view.startsWith("tune:");   // readings are live; there's nothing to rescan
+  b.hidden = tune; $("#scanInfo").hidden = tune;
+  if (!b.disabled) {
+    const s = scanScope(); b.textContent = s.label;
+    b.title = s.names ? `Runs: ${s.names.join(", ")}` : "Runs every scanner, including the full drive scan";
+    if (state.summary) renderScan();
+  }
+}
+$("#rescan").onclick = async () => { await api("/api/scan", {names: scanScope().names}); pollScan(true); };
+
+// Live updates. Anything that changes the database (Claude working through your marked items in its
+// terminal, a command-line action, a scan) bumps a version number; when it moves, the page refreshes
+// itself. It holds off while a details panel is open or you're typing, and doesn't poll when hidden.
+let lastVersion = null;
+const canAutoRefresh = () => !state.open && !["search", "note"].includes(document.activeElement?.id) && !$("#rescan").disabled;
+async function watchChanges() {
+  if (document.visibilityState !== "visible") return;
+  let v;
+  try { ({v} = await api("/api/changes")); } catch { return; }
+  if (lastVersion === null) { lastVersion = v; return; }
+  if (v === lastVersion || !canAutoRefresh()) return;
+  lastVersion = v;
+  const before = state.summary?.marked_for_removal.count ?? 0;
+  await refresh();
+  const done = before - (state.summary?.marked_for_removal.count ?? 0);
+  if (done > 0) toast(`${done} marked item${done > 1 ? "s" : ""} done`);
+}
+setInterval(watchChanges, 3000);
+document.addEventListener("visibilitychange", watchChanges);
+
+// ---------------------------------------------------------------- findings views
+function viewMeta() {
+  if (state.view === "overview") return {title: "Biggest items", blurb: "Everything the scanners found, largest first. Tick rows to mark them, or click one for details.", q: {}};
+  if (state.view === "marked") return {title: "Marked", blurb: "", q: {status: "remove"}};
+  const cat = state.view.slice(4);
+  return {title: LABEL[cat] || cat, blurb: BLURB[cat] || "", q: {category: cat}};
+}
+async function loadFindings() {
+  const meta = viewMeta();
+  const p = new URLSearchParams({limit: 500, ...meta.q});
+  if (state.drive !== "ALL") p.set("drive", state.drive);
+  state.rows = await api("/api/findings?" + p);
+  renderFindings(meta);
+}
+const isUpdates = () => state.view === "cat:app-update" || state.view === "cat:driver-update";
+const isProblems = () => state.view === "cat:device-problem";
+// A Windows page this view's work happens in (PC Cleaner itself never installs drivers).
+const OPEN_PAGE = {"cat:driver-update": ["optional-updates", "Open Optional updates"],
+                   "cat:device-problem": ["device-manager", "Open Device Manager"]};
+const isStartup = () => state.view === "cat:startup" || state.view === "cat:startup-broken";
+// Security first, then major jumps, then the rest; within each, alphabetical.
+const tagRank = r => (r.tags || []).includes("security") ? 3 : (r.tags || []).includes("major") ? 2 : 1;
+function sortedRows() {
+  let rows = state.rows.filter(r =>
+    (state.view !== "overview" || !HEALTH.has(r.category)) &&
+    (!state.hideKept || state.view === "marked" || !["keep", "done"].includes(r.status)) &&
+    (!state.search || (r.title + " " + (r.path || "")).toLowerCase().includes(state.search.toLowerCase())));
+  let {key, dir} = state.sort;
+  if (isUpdates() && key !== "name") key = "tags";
+  if (isStartup() && key !== "name") key = "ram";
+  if (key === "tags") return rows.sort((a, b) => (tagRank(a) - tagRank(b)) * dir || a.title.localeCompare(b.title));
+  if (key === "ram") return rows.sort((a, b) => ((a.ram_mb || 0) - (b.ram_mb || 0)) * dir || a.title.localeCompare(b.title));
+  const val = r => key === "size" ? r.size_bytes : key === "name" ? r.title.toLowerCase() :
+    key === "used" ? (usedSignal(r)?.d === "never" ? 1e6 : usedSignal(r)?.d ?? -1) : r[key];
+  return rows.sort((a, b) => (val(a) > val(b) ? 1 : val(a) < val(b) ? -1 : 0) * dir);
+}
+function renderFindings(meta) {
+  const rows = sortedRows();
+  const max = Math.max(1, ...rows.map(r => r.size_bytes));
+  const total = rows.reduce((s, r) => s + r.size_bytes, 0);
+  const arrow = k => state.sort.key === k ? (state.sort.dir < 0 ? " ↓" : " ↑") : "";
+  const isMarked = state.view === "marked";
+  $("#main").innerHTML = `
+    <div class="view-head"><h1>${esc(meta.title)}</h1>${meta.blurb ? `<p>${esc(meta.blurb)}</p>` : ""}</div>
+    ${isMarked && rows.length ? `<div class="callout"><p>Claude Code opens in a new window and works through these one batch at a time. It uninstalls programs with a before-and-after snapshot so nothing is left behind, updates apps with winget, clears caches with their own commands, and quarantines the rest so it can be undone. It shows you each batch and asks before doing anything, so stay nearby for the admin prompts.</p><button class="btn primary" data-act="claude">Action marked in Claude Code</button></div>` : ""}
+    <div class="toolbar">
+      <input type="search" id="search" placeholder="Filter by name or path" value="${esc(state.search)}">
+      ${isMarked ? "" : `<label><input type="checkbox" id="hideKept" ${state.hideKept ? "checked" : ""}> Hide ${isUpdates() ? "skipped" : "kept"}</label>`}
+      ${OPEN_PAGE[state.view] ? `<button class="btn" data-open="${OPEN_PAGE[state.view][0]}">${OPEN_PAGE[state.view][1]}</button>` : ""}
+      <span class="total num">${rows.length} items${total ? " · " + human(total) : ""}${state.view === "overview" || state.view === "cat:program" ? " (nested folders overlap)" : ""}</span>
+    </div>
+    ${rows.length ? `<table>
+      <thead><tr>
+        <th><input type="checkbox" id="selAll" aria-label="Select all"></th>
+        <th class="sortable" data-sort="name">Name${arrow("name")}</th>
+        ${isUpdates() ? `<th>Version</th><th class="sortable" data-sort="tags">Notes${state.sort.key !== "name" ? " ↓" : ""}</th>` :
+          isStartup() ? `<th>Type</th><th>Publisher</th><th class="sortable" data-sort="ram">Using now${state.sort.key !== "name" ? " ↓" : ""}</th>` :
+          isProblems() ? `<th>Problem</th>` : `
+        <th class="sortable" data-sort="size">Size${arrow("size")}</th>
+        <th class="sortable" data-sort="used">Last used${arrow("used")}</th>`}
+        <th>Risk</th><th>Decision</th>
+      </tr></thead>
+      <tbody>${rows.map(r => isUpdates() ? updateRowHtml(r) : isStartup() ? startupRowHtml(r) :
+                         isProblems() ? problemRowHtml(r) : rowHtml(r, max)).join("")}</tbody>
+    </table>` : `<div class="empty-state">${state.rows.length ? "Everything here is filtered out." : isUpdates() ? "Everything is up to date." :
+      isMarked ? "Nothing marked. Mark items anywhere in PC Cleaner and they'll collect here." :
+      isStartup() ? "Nothing here." : "Nothing found here on this drive."}</div>`}`;
+
+  const go = $('[data-act="claude"]');
+  if (go) go.onclick = actionMarked;
+  document.querySelectorAll("[data-open]").forEach(b => b.onclick = () =>
+    api("/api/open", {what: b.dataset.open}).then(() => toast(`${b.textContent.replace("Open ", "")} opened`))
+      .catch(e => toast(e.message === "not found" ? REOPEN : e.message)));
+  const s = $("#search");
+  s.oninput = () => { state.search = s.value; const pos = s.selectionStart; renderFindings(meta); const n = $("#search"); n.focus(); n.setSelectionRange(pos, pos); };
+  const hk = $("#hideKept"); if (hk) hk.onchange = () => { state.hideKept = hk.checked; localSet("hideKept", hk.checked ? "1" : "0"); renderFindings(meta); };
+  document.querySelectorAll("th.sortable").forEach(th => th.onclick = () => {
+    const k = th.dataset.sort;
+    state.sort = {key: k, dir: state.sort.key === k ? -state.sort.dir : (k === "name" ? 1 : -1)};
+    renderFindings(meta);
+  });
+  const all = $("#selAll");
+  if (all) {
+    all.checked = rows.length && rows.every(r => state.selected.has(r.id));
+    all.onchange = () => { rows.forEach(r => all.checked ? state.selected.add(r.id) : state.selected.delete(r.id)); renderFindings(meta); };
+  }
+  document.querySelectorAll("tbody tr").forEach(tr => {
+    const id = tr.dataset.id;
+    tr.onclick = e => {
+      if (e.target.matches("input")) return;
+      openDrawer(id);
+    };
+    tr.querySelector("input").onchange = e => {
+      e.target.checked ? state.selected.add(id) : state.selected.delete(id);
+      tr.classList.toggle("sel", e.target.checked); renderBulk();
+    };
+  });
+  renderBulk();
+}
+function statusText(r) {
+  const v = verbFor(r.category);
+  return r.status === "new" ? "—" : r.status === "remove" ? v.st : r.status === "keep" ? v.kept : r.status;
+}
+function problemRowHtml(r) {
+  return `<tr data-id="${r.id}" class="st-${r.status} ${state.selected.has(r.id) ? "sel" : ""}">
+    <td><input type="checkbox" ${state.selected.has(r.id) ? "checked" : ""} aria-label="Select ${esc(r.title)}"></td>
+    <td class="name"><div class="t" title="${esc(r.title)}">${esc(r.title)}</div></td>
+    <td class="pub">${esc(r.problem || "")}</td>
+    <td><span class="pill risk-${r.risk}">${r.risk}</span></td>
+    <td><span class="st ${r.status}">${statusText(r)}</span></td>
+  </tr>`;
+}
+function updateRowHtml(r) {
+  const tags = (r.tags || (r.class ? [r.class] : [])).map(t => `<span class="tag ${t}">${esc(TAG_LABEL[t] || t)}</span>`).join("");
+  return `<tr data-id="${r.id}" class="st-${r.status} ${state.selected.has(r.id) ? "sel" : ""}">
+    <td><input type="checkbox" ${state.selected.has(r.id) ? "checked" : ""} aria-label="Select ${esc(r.title)}"></td>
+    <td class="name"><div class="t" title="${esc(r.title)}">${esc(r.title)}</div></td>
+    <td class="ver num"><span class="from">${esc(r.installed)}</span> → ${esc(r.available)}</td>
+    <td class="tags">${tags || "—"}</td>
+    <td><span class="pill risk-${r.risk}">${r.risk}</span></td>
+    <td><span class="st ${r.status}">${statusText(r)}</span></td>
+  </tr>`;
+}
+function startupRowHtml(r) {
+  const chips = [r.hardware && `<span class="tag major">hardware</span>`,
+                 r.protected && `<span class="tag security">security software</span>`,
+                 r.duplicate_of && `<span class="tag">starts twice</span>`].filter(Boolean).join("");
+  return `<tr data-id="${r.id}" class="st-${r.status} ${state.selected.has(r.id) ? "sel" : ""}">
+    <td><input type="checkbox" ${state.selected.has(r.id) ? "checked" : ""} aria-label="Select ${esc(r.title)}"></td>
+    <td class="name"><div class="t" title="${esc(r.title)}">${esc(r.title)}</div><div class="p">${esc(r.location || "")}</div></td>
+    <td class="tags">${esc(KIND[r.kind] || "")} ${chips}</td>
+    <td class="pub" title="${esc(r.publisher || "")}">${esc(r.publisher || "—")}</td>
+    <td class="used num">${r.ram_mb ? `${r.ram_mb} MB` : r.running ? "running" : "—"}</td>
+    <td><span class="pill risk-${r.risk}">${r.risk}</span></td>
+    <td><span class="st ${r.status}">${statusText(r)}</span></td>
+  </tr>`;
+}
+function rowHtml(r, max) {
+  const u = usedSignal(r);
+  const stale = u && (u.d === "never" || u.d > 365);
+  const st = statusText(r);
+  return `<tr data-id="${r.id}" class="st-${r.status} ${state.selected.has(r.id) ? "sel" : ""}">
+    <td><input type="checkbox" ${state.selected.has(r.id) ? "checked" : ""} aria-label="Select ${esc(r.title)}"></td>
+    <td class="name"><div class="t" title="${esc(r.title)}">${esc(r.title)}</div><div class="p" title="${esc(r.path)}">${esc([state.view === "overview" || state.view === "marked" ? LABEL[r.category] || r.category : "", r.path || (r.installed ? `${r.installed} → ${r.available}` : "")].filter(Boolean).join(" · "))}</div></td>
+    <td class="size"><div class="sizecell"><span class="num">${r.size_bytes ? esc(r.size) : "—"}</span><div class="sizebar"><i style="width:${(100 * r.size_bytes / max).toFixed(1)}%"></i></div></div></td>
+    <td class="used ${stale ? "stale" : ""}">${u ? `${esc(ago(u.d))}<small>${u.how}</small>` : "—"}</td>
+    <td><span class="pill risk-${r.risk}">${r.risk}</span></td>
+    <td><span class="st ${r.status}">${st}</span></td>
+  </tr>`;
+}
+function renderBulk() {
+  const n = state.selected.size;
+  const bytes = state.rows.filter(r => state.selected.has(r.id)).reduce((s, r) => s + r.size_bytes, 0);
+  $("#bulkInfo").textContent = `${n} selected${bytes ? " · " + human(bytes) : ""}`;
+  const v = verbFor(state.view.startsWith("cat:") ? state.view.slice(4) : null);
+  $('[data-bulk="remove"]').textContent = v.remove;
+  $('[data-bulk="keep"]').textContent = v.keep;
+  $("#bulk").classList.toggle("on", n > 0);
+}
+document.querySelectorAll("[data-bulk]").forEach(b => b.onclick = async () => {
+  const ids = [...state.selected];
+  await api("/api/decide", {ids, status: b.dataset.bulk});
+  state.selected.clear();
+  toast(b.dataset.bulk === "new" ? `${ids.length} cleared` : `${b.textContent}: ${ids.length}`);
+  refresh();
+});
+
+// ---------------------------------------------------------------- drawer
+async function openDrawer(id) {
+  const f = await api("/api/finding?id=" + encodeURIComponent(id));
+  state.open = f;
+  const ev = f.evidence || {};
+  const evRows = Object.entries(ev).filter(([k, v]) => k !== "items" && v !== null && v !== "" && !(Array.isArray(v) && !v.length));
+  const fmtVal = v => Array.isArray(v) && v.every(x => typeof x !== "object") ? v.join(", ") :
+    typeof v === "object" ? JSON.stringify(v, null, 1) : String(v);
+  const onDisk = f.path && /^[a-z]:\\/i.test(f.path);
+  const v = verbFor(f.category);
+  const isUpd = f.category === "app-update" || f.category === "driver-update";
+  const big = isUpd ? `${esc(ev.installed)} → ${esc(ev.available)}` : f.size ? esc(f.size_human) : "—";
+  $("#drawer").innerHTML = `
+    <button class="x" aria-label="Close">×</button>
+    <div class="dh"><h2>${esc(f.title)}</h2><div class="p">${esc(LABEL[f.category] || f.category)}${f.path ? " · " + esc(f.path) : ""}</div>
+      ${onDisk ? `<div class="links"><a data-act="reveal">Show in Explorer</a><a data-act="explore">Explore sizes</a></div>` : ""}</div>
+    <div class="db">
+      <div class="big num">${big}</div>
+      <span class="pill risk-${f.risk}">${f.risk} risk</span>
+      ${f.suggestion ? `<h3>What to know</h3><p>${esc(f.suggestion)}</p>` : ""}
+      ${f.command ? `<h3>${isUpd ? "How it's updated" : "Proper way to remove"}</h3><div class="cmd"><code>${esc(f.command)}</code><button class="btn" data-act="copy">Copy</button></div>` : ""}
+      ${evRows.length ? `<h3>Evidence</h3><dl class="ev">${evRows.map(([k, v]) => `<dt>${esc(k.replaceAll("_", " "))}</dt><dd>${esc(fmtVal(v))}</dd>`).join("")}</dl>` : ""}
+    </div>
+    <div class="decide">
+      ${["remove", "keep", "review"].map(s => `<button class="btn ${f.status === s ? "on" : ""}" data-s="${s}">${s === "remove" ? v.remove : s === "keep" ? v.keep : "Review later"}</button>`).join("")}
+      <button class="btn" data-s="new">Clear</button>
+      <input id="note" placeholder="Note for Claude (optional), e.g. 'keep saves'" value="${esc(f.note || "")}">
+    </div>`;
+  const d = $("#drawer"); d.classList.add("on"); d.setAttribute("aria-hidden", "false");
+  $(".x", d).onclick = closeDrawer;
+  d.querySelectorAll("[data-s]").forEach(b => b.onclick = async () => {
+    await api("/api/decide", {ids: [f.id], status: b.dataset.s, note: $("#note").value || null});
+    toast(b.dataset.s === "new" ? "Decision cleared" : b.textContent);
+    closeDrawer(); refresh();
+  });
+  const copy = $('[data-act="copy"]', d);
+  if (copy) copy.onclick = () => { navigator.clipboard.writeText(f.command); toast("Copied"); };
+  const rev = $('[data-act="reveal"]', d);
+  if (rev) rev.onclick = () => api("/api/reveal", {path: f.path}).catch(e => toast(e.message));
+  const exp = $('[data-act="explore"]', d);
+  if (exp) exp.onclick = () => { closeDrawer(); state.view = "explore"; state.explorePath = f.path; renderNav(); refreshView(); };
+}
+function closeDrawer() { const d = $("#drawer"); d.classList.remove("on"); d.setAttribute("aria-hidden", "true"); state.open = null; }
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
+
+// ---------------------------------------------------------------- explore
+async function renderExplore() {
+  const drive = state.drive === "ALL" ? "C" : state.drive;
+  const path = state.explorePath || `${drive}:\\`;
+  let r;
+  try { r = await api("/api/du?path=" + encodeURIComponent(path) + "&top=60"); } catch (e) { r = {error: e.message}; }
+  const head = `<div class="view-head"><h1>Explore disk</h1><p>Folder sizes from the last index of this drive. Click a folder to go inside.</p></div>`;
+  if (r.error) {
+    const idx = await api("/api/index");
+    const running = Object.values(idx).find(x => x.state === "running");
+    $("#main").innerHTML = head + `<div class="callout">${running
+      ? `Indexing ${esc(running.root)}… ${running.files.toLocaleString()} files, ${human(running.bytes)} so far.`
+      : `${esc(path)} hasn't been indexed${state.explorePath ? " (or is smaller than 50 MB)" : ""}. Indexing walks the whole drive once (about 2 minutes per 2 TB).`}</div>
+      ${running ? "" : `<div class="toolbar"><button class="btn primary" id="doIndex">Index ${drive}:</button>${state.explorePath ? `<button class="btn" id="up">Back to ${drive}:</button>` : ""}</div>`}`;
+    if (running) setTimeout(() => state.view === "explore" && renderExplore(), 1500);
+    const b = $("#doIndex"); if (b) b.onclick = async () => { await api("/api/index", {root: `${drive}:\\`}); renderExplore(); };
+    const up = $("#up"); if (up) up.onclick = () => { state.explorePath = null; renderExplore(); };
+    return;
+  }
+  const parts = r.path.split("\\").filter(Boolean);
+  const crumbs = parts.map((p, i) => {
+    const full = parts.slice(0, i + 1).join("\\") + (i === 0 ? "\\" : "");
+    return i === parts.length - 1 ? `<b>${esc(p)}</b>` : `<a data-path="${esc(full)}">${esc(p)}</a>`;
+  }).join(" › ");
+  const items = [...r.children.map(c => ({...c, dir: true})), ...r.big_files.map(f => ({...f, dir: false}))]
+    .sort((a, b) => b.size - a.size);
+  if (r.other_bytes > 0) items.push({path: "(smaller items)", size: r.other_bytes, other: true});
+  const max = Math.max(1, ...items.map(i => i.size));
+  $("#main").innerHTML = head + `<div class="crumbs">${crumbs} <span class="num">· ${human(r.size)}</span></div>
+    <table><thead><tr><th></th><th>Name</th><th>Size</th><th>Last modified</th><th></th><th></th></tr></thead><tbody>
+    ${items.map(i => `<tr ${i.dir ? `data-path="${esc(i.path)}"` : ""} style="${i.dir ? "" : "cursor:default"}">
+      <td>${i.dir ? "📁" : i.other ? "" : "📄"}</td>
+      <td class="name"><div class="t">${esc(i.other ? i.path : i.path.split("\\").pop())}</div></td>
+      <td class="size"><div class="sizecell"><span class="num">${human(i.size)}</span><div class="sizebar"><i style="width:${(100 * i.size / max).toFixed(1)}%"></i></div></div></td>
+      <td class="used">${i.mtime ? esc(ago(Math.floor((Date.now() / 1000 - i.mtime) / 86400))) : ""}</td><td></td><td></td></tr>`).join("")}
+    </tbody></table>`;
+  document.querySelectorAll("[data-path]").forEach(el => el.onclick = () => { state.explorePath = el.dataset.path; renderExplore(); });
+}
+
+// ---------------------------------------------------------------- quarantine
+async function renderQuarantine() {
+  const q = await api("/api/quarantine");
+  const total = q.reduce((s, x) => s + x.size, 0);
+  $("#main").innerHTML = `<div class="view-head"><h1>Quarantine</h1>
+    <p>Items moved aside by a cleanup. They can still be restored, and they don't free any space until purged — ask Claude to purge once you're sure nothing is missed.</p></div>
+    ${q.length ? `<div class="toolbar"><span class="total num">${q.length} items · ${human(total)}</span></div>
+    <table><thead><tr><th></th><th>Original location</th><th>Size</th><th>Quarantined</th><th></th><th></th></tr></thead><tbody>
+    ${q.map(x => `<tr style="cursor:default"><td class="num">#${x.journal_id}</td><td class="name"><div class="t">${esc(x.original.split("\\").pop())}</div><div class="p">${esc(x.original)}</div></td>
+      <td class="num">${esc(x.size_h)}</td><td class="used">${esc(ago(Math.floor(x.age_days)))}</td><td></td><td></td></tr>`).join("")}
+    </tbody></table>` : `<div class="empty-state">Quarantine is empty.</div>`}`;
+}
+
+// ---------------------------------------------------------------- tune: sensors
+// Live readings, polled every second while this page is showing. Read-only: naming a sensor only changes
+// PC Cleaner's own label. Full readings need admin, which comes from a background reader started with one
+// Windows prompt; it stops itself two minutes after this page stops asking.
+const UNIT = {Temperature: "°C", Fan: " RPM", Control: "%", Load: "%", Power: " W", Clock: " MHz", Voltage: " V",
+              Current: " A", Data: " GB", SmallData: " MB", Level: "%", Flow: " L/h", Frequency: " Hz"};
+const TYPE_ORDER = ["Temperature", "Fan", "Control", "Power", "Load", "Clock", "Voltage", "Current", "Data",
+                    "SmallData", "Throughput", "Level", "Factor", "Frequency", "Energy", "Flow", "Noise"];
+const TYPE_LABEL = {Temperature: "Temperatures", Fan: "Fan speeds", Control: "Fan control", Power: "Power",
+                    Load: "Load", Clock: "Clocks", Voltage: "Voltages", Data: "Data", SmallData: "Data",
+                    Throughput: "Throughput"};
+const PART_KIND = {Cpu: "Processor", GpuNvidia: "Graphics", GpuAmd: "Graphics", GpuIntel: "Graphics",
+                   SuperIO: "Motherboard fan chip", Motherboard: "Motherboard", Memory: "Memory", Storage: "Drive"};
+const hw = {timer: null, editing: null, open: new Set(), starting: false, data: null};
+
+function fmtVal(s, v = s.value) {
+  if (v == null) return "—";
+  if (s.type === "Throughput") return human(v) + "/s";
+  const whole = ["Fan", "Clock"].includes(s.type) || (s.type === "Temperature" && Number.isInteger(v));
+  return (whole ? Math.round(v).toLocaleString() : v.toFixed(s.type === "Voltage" ? 3 : 1)) + (UNIT[s.type] || "");
+}
+function flatParts(list, out = []) { for (const h of list || []) { out.push(h); flatParts(h.sub, out); } return out; }
+function keySensor(h, s) {
+  if (s.hidden || s.value == null) return false;
+  if (!hw.data?.admin && h.type === "Cpu" && s.type !== "Load") return false;
+  const n = s.name;
+  if (s.type === "Temperature") return !(h.type === "Cpu" && n.includes("Core #"));
+  if (s.type === "Fan" || s.type === "Control") return false;   // every fan is in the Fans panel
+  if (s.type === "Power") return n.includes("Package");
+  if (s.type === "Load") return ["CPU Total", "GPU Core", "Memory", "Total Activity"].includes(n);
+  return false;
+}
+function nameButton(id, text, original, kind = "") {
+  if (hw.editing === id) return `<input class="fan-input" data-edit="${esc(id)}" value="${esc(text === original ? "" : text)}" placeholder="${esc(original)}" maxlength="60">`;
+  const sub = [text !== original ? original : "", kind].filter(Boolean).join(" · ");
+  return `<button class="fan-name" data-name="${esc(id)}" title="Rename">${esc(text)}${sub ? `<small class="sub"> ${esc(sub)}</small>` : ""}<span class="edit">rename</span></button>`;
+}
+function sensorRow(s, names) {
+  const lvl = s.crit != null && s.value >= s.crit ? "crit" : s.warn != null && s.value >= s.warn ? "warn" : "";
+  const bar = s.type === "Temperature" ? `<div class="tbar ${lvl}"><i style="width:${Math.min(100, 100 * s.value / (s.crit || 100)).toFixed(0)}%"></i></div>` : "";
+  const mm = s.max != null && s.min != null && s.max !== s.min ? `${fmtVal(s, s.min)} – ${fmtVal(s, s.max)}` : "";
+  const kind = {Load: "load", Power: "power", Clock: "clock", Voltage: "voltage"}[s.type];
+  return `<tr class="${lvl}"><td class="sname">${nameButton(s.id, names[s.id] || s.name, s.name, kind)}</td><td>${bar}</td>
+    <td class="v num">${fmtVal(s)}</td><td class="mm num" title="Lowest – highest since the reader started">${mm}</td></tr>`;
+}
+
+async function renderSensors() {
+  $("#main").innerHTML = `<div class="view-head"><h1>Sensors</h1>
+    <p>Live temperatures, fan speeds, power and load, updated every second. Read-only: your fans stay under FanControl,
+    the BIOS and your cooler's own software. Click any name to rename it, for example "Top exhaust".</p></div>
+    <div class="hw-wrap" id="hw"><div class="empty-state">Reading sensors…</div></div>`;
+  if (hw.data) drawSensors(hw.data);   // a page refresh shouldn't flash back to "Reading…"
+  clearInterval(hw.timer);
+  hw.timer = setInterval(sensorsTick, 1000);
+  await sensorsTick();
+}
+async function sensorsTick() {
+  if (state.view !== "tune:sensors") { clearInterval(hw.timer); return; }
+  if (document.visibilityState !== "visible" || hw.editing || sensorsTick.busy) return;
+  if (document.activeElement?.id === "logLabel") return;   // don't redraw under someone typing
+  sensorsTick.busy = true;
+  try { hw.data = await api("/api/hw/now"); } catch (e) { hw.data = {error: e.message}; }
+  finally { sensorsTick.busy = false; }
+  if (state.view === "tune:sensors" && !hw.editing) drawSensors(hw.data);
+}
+function drawSensors(d) {
+  const el = $("#hw"); if (!el) return;
+  if (d.error) { el.innerHTML = `<div class="callout">Couldn't read sensors: ${esc(d.error)}</div>`; return; }
+  const names = d.names || {};
+  const parts = flatParts(d.hardware);
+  const hot = parts.flatMap(h => h.sensors.filter(s => s.warn != null && s.value != null && s.value >= s.warn && !s.hidden)
+    .map(s => `${names[s.id] || s.name} (${h.name}) is at ${fmtVal(s)}`));
+  let h = `<div class="hw-status"><span class="dot ${d.admin ? "" : "off"}"></span>
+    <span>${d.admin ? "All sensors" : "Limited readings (no admin)"} · ${esc(d.source || "")}${d.via === "monitor" ? " · background reader" : ""}</span></div>`;
+  if (!d.admin) h += `<div class="callout" style="margin:0"><p>Without admin, Windows only shows the graphics card, drives and CPU load.
+    CPU temperatures, the motherboard's fan headers and RAM temperatures need a background reader that runs as admin.</p>
+    <p style="margin:0">It asks Windows once (a UAC prompt), only reads, and stops by itself two minutes after you leave this page.</p>
+    <div style="margin-top:10px"><button class="btn primary" id="hwStart" ${hw.starting ? "disabled" : ""}>${hw.starting ? "Waiting for Windows…" : "Read all sensors"}</button></div></div>`;
+  h += logBar(d);
+  if (hot.length) h += `<div class="hw-alert">Running hot: ${hot.map(esc).join("; ")}</div>`;
+  const fans = d.fan_headers || [];
+  if (fans.length) {
+    const maxRpm = Math.max(1, ...fans.filter(f => !(f.hint)).map(f => f.rpm || 0));
+    h += `<section class="panel"><h2>Fans <small>${fans.filter(f => f.rpm).length} spinning</small></h2><table>
+      <thead><tr><th>Fan</th><th></th><th>Speed</th><th>Set to</th><th>Controlled by</th></tr></thead><tbody>
+      ${fans.map(f => `<tr><td>${nameButton(f.fan_id, f.label || f.header, f.header)}</td>
+        <td style="width:18%">${f.rpm && !f.hint ? `<div class="tbar"><i style="width:${(100 * f.rpm / maxRpm).toFixed(0)}%"></i></div>` : ""}</td>
+        <td class="v num">${f.rpm == null ? "—" : Math.round(f.rpm).toLocaleString() + " RPM"}</td>
+        <td class="v num">${f.percent == null ? "" : Math.round(f.percent) + "%"}</td>
+        <td class="who">${esc(f.controlled_by)}${f.hint ? `<small>${esc(f.hint)}</small>` : ""}</td></tr>`).join("")}
+      </tbody></table></section>`;
+  }
+  h += `<div class="hw-grid">`;
+  for (const p of parts) {
+    const shown = p.sensors.filter(s => keySensor(p, s));
+    const rest = p.sensors.filter(s => !s.hidden && s.value != null && !shown.includes(s)
+      && s.type !== "Fan" && s.type !== "Control" && (d.admin || p.type !== "Cpu" || s.type === "Load"));
+    if (!shown.length && !rest.length) continue;
+    const byType = TYPE_ORDER.map(t => [t, rest.filter(s => s.type === t)]).filter(([, l]) => l.length);
+    h += `<section class="panel"><h2>${esc(p.name)} <small>${esc(PART_KIND[p.type] || p.type)}${p.tjmax ? ` · throttles at ${p.tjmax}°C` : ""}</small></h2>
+      ${shown.length ? `<table><tbody>${shown.map(s => sensorRow(s, names)).join("")}</tbody></table>` : ""}
+      ${rest.length ? `<details data-part="${esc(p.id)}" ${hw.open.has(p.id) ? "open" : ""}><summary>${shown.length ? "More" : "Show"} readings (${rest.length})</summary>
+        <table><tbody>${byType.map(([t, l]) => `<tr><td colspan="4" style="color:var(--faint);font-size:12px;padding-top:10px">${esc(TYPE_LABEL[t] || t)}</td></tr>`
+          + l.map(s => sensorRow(s, names)).join("")).join("")}</tbody></table></details>` : ""}</section>`;
+  }
+  h += `</div>`;
+  el.innerHTML = h;
+  el.querySelectorAll("details[data-part]").forEach(x => x.ontoggle = () => x.open ? hw.open.add(x.dataset.part) : hw.open.delete(x.dataset.part));
+  el.querySelectorAll("[data-name]").forEach(b => b.onclick = () => {
+    hw.editing = b.dataset.name; drawSensors(hw.data);
+    const i = $(`[data-edit]`, el); i.focus(); i.select();
+    const done = async save => {
+      const id = hw.editing; if (!id) return; hw.editing = null;
+      if (save) { try { await api("/api/hw/name", {id, label: i.value}); } catch (e) { toast(e.message); } }
+      await sensorsTick();
+    };
+    i.onkeydown = e => { if (e.key === "Enter") done(true); if (e.key === "Escape") { e.stopPropagation(); done(false); } };
+    i.onblur = () => done(true);
+  });
+  wireLogBar(el);
+  const start = $("#hwStart");
+  if (start) start.onclick = async () => {
+    hw.starting = true; drawSensors(hw.data);
+    try {
+      const r = await api("/api/hw/monitor", {});
+      if (r.error) toast(r.error);
+    } catch (e) { toast(e.message === "not found" ? REOPEN : e.message); }
+    setTimeout(() => { hw.starting = false; }, 4000);
+  };
+}
+
+// ---------------------------------------------------------------- tune: logging
+// A log records every sensor each second until you stop it (4 hours at most). "That was loud" saves the
+// background reader's last 5 minutes, so the moment before you noticed the noise is caught too.
+function logBar(d) {
+  if (d.log) {
+    const mins = Math.max(0, Math.round((Date.now() / 1000 - d.log.started) / 60));
+    return `<section class="panel"><div class="logbar"><span class="rec" aria-hidden="true"></span>
+      <b>Logging “${esc(d.log.label)}”</b><span class="num" style="color:var(--muted)">${mins} min${d.log.picked_up ? "" : " · waiting for the reader"}</span>
+      <span class="spacer"></span>
+      <button class="btn warn" data-log="mark" title="Adds a marker at this second, so Claude knows which moment you mean">Mark: noisy now</button>
+      <button class="btn" data-log="stop">Stop logging</button>
+      <span class="hint">Click “Mark” whenever the fans annoy you. Then ask Claude to look at log #${d.log.id}.</span></div></section>`;
+  }
+  return `<section class="panel"><div class="logbar">
+    <input id="logLabel" placeholder="What are you doing? e.g. Gaming: WoW" maxlength="80" aria-label="Log label">
+    <button class="btn primary" data-log="start">Start logging</button>
+    ${d.via === "monitor" ? `<button class="btn warn" data-log="save" title="Saves the last 5 minutes of readings as a log">That was loud: save the last 5 minutes</button>` : ""}
+    <span class="hint">A log records every sensor once a second until you stop it (4 hours at most), with the busiest programs.
+    ${d.via === "monitor" ? "The background reader keeps the last 5 minutes in memory, so “That was loud” catches what led up to it." : ""}</span></div></section>`;
+}
+function wireLogBar(el) {
+  el.querySelectorAll("[data-log]").forEach(b => b.onclick = async () => {
+    const action = b.dataset.log;
+    b.disabled = true;
+    try {
+      const r = await api("/api/hw/log", {action, label: $("#logLabel")?.value || ""});
+      const ok = r.started || r.stopped || r.marked || r.saved;
+      toast(!ok ? (r.error || r.note || "That didn't work") :
+        action === "start" ? `Logging started (log #${r.session})` : action === "stop" ? `Stopped. Log #${r.session} saved` :
+        action === "mark" ? "Marked" : `Saved the last ${r.seconds || ""} s as log #${r.session}`);
+    } catch (e) { toast(e.message === "not found" ? REOPEN : e.message); }
+    b.disabled = false;
+    sensorsTick();
+  });
+  const i = $("#logLabel");
+  if (i) i.onkeydown = e => { if (e.key === "Enter") $("[data-log=start]", el).click(); };
+}
+
+const logs = {selected: null};
+async function renderLogs() {
+  const list = await api("/api/hw/logs");
+  if (logs.selected == null && list.length) logs.selected = list[0].id;
+  const when = t => new Date(t * 1000).toLocaleString([], {weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"});
+  $("#main").innerHTML = `<div class="view-head"><h1>Logs</h1>
+    <p>Sensor logs you started, and moments you saved. Claude reads these: ask it to “look at my latest sensor log”, or name a log number.</p></div>
+    <div class="hw-wrap">${list.length ? `<section class="panel"><table class="loglist"><thead><tr><th>#</th><th>What</th><th>Started</th><th>Length</th><th>Marks</th><th></th></tr></thead><tbody>
+      ${list.map(r => `<tr data-id="${r.id}" class="${r.id === logs.selected ? "sel" : ""}"><td class="num">${r.id}</td>
+        <td><b>${esc(r.label)}</b>${r.kind === "recent" ? ` <span class="tag">saved moment</span>` : ""}${r.admin === false ? ` <span class="tag">limited</span>` : ""}</td>
+        <td class="num">${esc(when(r.started))}</td><td class="num">${r.minutes < 1 ? Math.round(r.minutes * 60) + " s" : r.minutes + " min"}</td>
+        <td class="num">${r.marks || ""}</td><td class="who">${r.active ? `<span class="over">Logging now</span>` : esc(r.stop_reason || "")}</td></tr>`).join("")}
+      </tbody></table></section><div id="report"></div>`
+      : `<div class="callout" style="margin:0">No logs yet. Start one from Tune › Sensors, ideally while doing something that makes the fans loud.</div>`}</div>`;
+  $("#main").querySelectorAll("tr[data-id]").forEach(tr => tr.onclick = () => { logs.selected = +tr.dataset.id; renderLogs(); });
+  if (logs.selected != null && list.length) renderReport(logs.selected);
+}
+const procText = l => (l || []).map(([n, v]) => `<b>${esc(n)}</b> ${v}%`).join(", ") || "—";
+async function renderReport(id) {
+  const el = $("#report"); if (!el) return;
+  el.innerHTML = `<div class="empty-state">Reading log #${id}…</div>`;
+  let r;
+  try { r = await api(`/api/hw/report?id=${id}`); } catch (e) { r = {error: e.message}; }
+  if (r.error || !r.temperatures) { el.innerHTML = `<div class="callout" style="margin:0">${esc(r.error || r.note || "This log has no readings yet.")}</div>`; return; }
+  const s = r.session;
+  let h = `<div class="report"><section class="panel"><h2>#${s.id} ${esc(s.label)} <small>${esc(s.started)} · ${s.minutes} min · ${s.samples} readings${s.all_sensors ? "" : " · limited (no admin)"}</small></h2>
+    <div class="meta">${r.fan_ramps_total} fan ramp${r.fan_ramps_total === 1 ? "" : "s"}, ${r.marks.length} mark${r.marks.length === 1 ? "" : "s"}${r.limit_breaches.length ? `, <span class="over">${r.limit_breaches.length} over a limit</span>` : ""}.
+    To dig in, ask Claude: “look at sensor log #${s.id}”.</div></section>`;
+  if (r.limit_breaches.length) h += `<div class="hw-alert">${r.limit_breaches.map(esc).join("<br>")}</div>`;
+  if (r.marks.length) h += `<section class="panel"><h2>Your marks</h2><table><tbody>${r.marks.map(m => `<tr><td class="when">${esc(m.at)}</td>
+    <td>${esc(m.note)}<div class="procs">Fans: ${Object.entries(m.fans_rpm).map(([n, v]) => `${esc(n)} ${v.toLocaleString()} RPM`).join(", ") || "—"}</div>
+    ${m.fans_rose_last_60s.length ? `<div class="procs">Rose in the minute before: ${m.fans_rose_last_60s.map(esc).join(", ")}</div>` : ""}
+    <div class="procs">CPU: ${procText(m.top_cpu)} · GPU: ${procText(m.top_gpu)}</div></td></tr>`).join("")}</tbody></table></section>`;
+  h += `<section class="panel"><h2>Fan ramps <small>${r.fan_ramps_total > r.fan_ramps.length ? `the ${r.fan_ramps.length} biggest of ${r.fan_ramps_total}` : "when a fan sped up, and what came before"}</small></h2>
+    ${r.fan_ramps.length ? `<table><tbody>${r.fan_ramps.map(x => `<tr><td class="when">${esc(x.at)}</td>
+      <td>${x.fans.map(f => `<b>${esc(f.fan)}</b> ${f.from_rpm.toLocaleString()} → ${f.to_rpm.toLocaleString()} RPM`).join(", ")} <span class="procs">for ${x.lasted_s} s</span>
+      <div class="procs">Before it: ${x.temps_rose_30s_before.map(t => `${esc(t.sensor)} ${t.from}→${t.to}°C`).join(", ") || "no temperature rose 3°C or more"}</div>
+      <div class="procs">CPU: ${procText(x.top_cpu)} · GPU: ${procText(x.top_gpu)}</div></td></tr>`).join("")}</tbody></table>`
+      : `<div class="meta">No fan sped up by ${150} RPM or more in this log.</div>`}</section>`;
+  h += `<div class="hw-grid"><section class="panel"><h2>Temperatures <small>°C</small></h2><table><thead><tr><th>Sensor</th><th>Avg</th><th>95%</th><th>Max</th><th>Warn</th></tr></thead><tbody>
+    ${r.temperatures.map(t => `<tr><td class="sname">${esc(t.sensor.split(": ").slice(1).join(": "))}<small>${esc(t.sensor.split(": ")[0])}</small></td>
+      <td class="num">${t.avg}</td><td class="num">${t.p95}</td><td class="num ${t.seconds_over_warn ? "over" : ""}">${t.max}</td><td class="num mm">${t.warn ?? ""}</td></tr>`).join("")}</tbody></table></section>
+    <section class="panel"><h2>Fans <small>RPM</small></h2><table><thead><tr><th>Fan</th><th>Avg</th><th>95%</th><th>Max</th><th>Set to (avg)</th></tr></thead><tbody>
+    ${r.fans.map(f => `<tr><td class="sname">${esc(f.fan)}</td><td class="num">${Math.round(f.rpm.avg).toLocaleString()}</td><td class="num">${Math.round(f.rpm.p95).toLocaleString()}</td>
+      <td class="num">${Math.round(f.rpm.max).toLocaleString()}</td><td class="num mm">${f.percent ? Math.round(f.percent.avg) + "%" : ""}</td></tr>`).join("")}</tbody></table></section>
+    <section class="panel"><h2>Busiest programs <small>average share</small></h2><table><tbody>
+      <tr><td class="when">CPU</td><td class="procs">${procText(r.busiest_programs_avg_percent.cpu)}</td></tr>
+      <tr><td class="when">GPU</td><td class="procs">${procText(r.busiest_programs_avg_percent.gpu)}</td></tr></tbody></table></section>
+    <section class="panel"><h2>Power and load</h2><table><thead><tr><th>Sensor</th><th>Avg</th><th>95%</th><th>Max</th></tr></thead><tbody>
+    ${r.power_and_load.map(p => `<tr><td class="sname">${esc(p.sensor.split(": ").slice(1).join(": "))}<small>${p.type === "Power" ? "W" : "%"} · ${esc(p.sensor.split(": ")[0])}</small></td>
+      <td class="num">${p.avg}</td><td class="num">${p.p95}</td><td class="num">${p.max}</td></tr>`).join("")}</tbody></table></section></div></div>`;
+  el.innerHTML = h;
+}
+
+// ---------------------------------------------------------------- wiring
+async function refreshView() {
+  closeDrawer();
+  if (state.view === "explore") return renderExplore().then(renderRescan);
+  if (state.view === "quarantine") return renderQuarantine().then(renderRescan);
+  if (state.view === "tune:sensors") return renderSensors().then(renderRescan);
+  if (state.view === "tune:logs") return renderLogs().then(renderRescan);
+  return loadFindings().then(renderRescan);
+}
+async function refresh() {
+  try { await loadSummary(); await refreshView(); }
+  catch (e) {
+    $("#main").innerHTML = `<div class="empty-state">This window lost its connection to PC Cleaner (${esc(e.message)}).<br>Close it and open PC Cleaner again.</div>`;
+  }
+}
+refresh().then(async () => {
+  try { if ((await api("/api/scan")).state === "running") pollScan(); } catch {}
+});
+</script>
+</body>
+</html>

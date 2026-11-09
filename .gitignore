@@ -1,0 +1,13 @@
+# Local state: never published
+.venv/
+.venv*/
+data/
+vendor/
+notes/
+CLAUDE.local.md
+.mcp.json
+.claude/settings.local.json
+.impeccable/
+.playwright-mcp/
+__pycache__/
+*.pyc
